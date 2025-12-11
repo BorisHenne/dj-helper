@@ -1,0 +1,18 @@
+[
+  { "name": "I. Digumber", "totalPlays": 1, "lastPlayedAt": "2025-10-02", "avatar": "🎵", "color": "#22c55e" },
+  { "name": "O. Ngabi", "totalPlays": 3, "lastPlayedAt": "2025-10-31", "avatar": "🎤", "color": "#84cc16" },
+  { "name": "A. Gautier", "totalPlays": 2, "lastPlayedAt": "2025-11-04", "avatar": "🎧", "color": "#eab308" },
+  { "name": "C. Hubert", "totalPlays": 2, "lastPlayedAt": "2025-11-07", "avatar": "🎸", "color": "#f97316" },
+  { "name": "T. Marrot", "totalPlays": 2, "lastPlayedAt": "2025-11-13", "avatar": "🎹", "color": "#ef4444" },
+  { "name": "H. Faria", "totalPlays": 3, "lastPlayedAt": "2025-11-19", "avatar": "🥁", "color": "#06b6d4" },
+  { "name": "V. Tomasso", "totalPlays": 1, "lastPlayedAt": "2025-11-25", "avatar": "🎺", "color": "#3b82f6" },
+  { "name": "A. Cenita", "totalPlays": 2, "lastPlayedAt": "2025-11-26", "avatar": "🎻", "color": "#8b5cf6" },
+  { "name": "T. Maurel", "totalPlays": 3, "lastPlayedAt": "2025-11-27", "avatar": "🎷", "color": "#ec4899" },
+  { "name": "N. Whewell", "totalPlays": 5, "lastPlayedAt": "2025-11-28", "avatar": "🪗", "color": "#14b8a6" },
+  { "name": "S. Mooken", "totalPlays": 4, "lastPlayedAt": "2025-12-02", "avatar": "🎼", "color": "#22c55e" },
+  { "name": "B. Henne", "totalPlays": 5, "lastPlayedAt": "2025-12-01", "avatar": "🎶", "color": "#84cc16" },
+  { "name": "G. Luchmun", "totalPlays": 5, "lastPlayedAt": "2025-12-04", "avatar": "🔊", "color": "#eab308" },
+  { "name": "T. Rhyman", "totalPlays": 5, "lastPlayedAt": "2025-12-09", "avatar": "🎙️", "color": "#f97316" },
+  { "name": "K. Tang Sak Yuk", "totalPlays": 3, "lastPlayedAt": "2025-12-11", "avatar": "🪘", "color": "#ef4444" },
+  { "name": "V. Ordinario", "totalPlays": 8, "lastPlayedAt": "2025-12-10", "avatar": "💿", "color": "#06b6d4" }
+]
