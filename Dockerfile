@@ -28,9 +28,12 @@ RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
-# Stage 3: Runner
-FROM node:20-alpine AS runner
+# Stage 3: Runner (use Debian slim for OpenSSL compatibility)
+FROM node:20-slim AS runner
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -42,6 +45,8 @@ RUN adduser --system --uid 1001 nextjs
 # Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Set correct permissions for prerender cache
 RUN mkdir .next
