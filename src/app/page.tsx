@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import SpinningWheel from '@/components/SpinningWheel'
 import DJCard from '@/components/DJCard'
 import ConfirmButton from '@/components/ConfirmButton'
+import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse } from '@/types'
 import { RefreshCw, Trophy, Users } from 'lucide-react'
 
@@ -156,8 +157,12 @@ export default function HomePage() {
             </AnimatePresence>
           </div>
 
-          {/* Colonne droite - Classement */}
-          <div>
+          {/* Colonne droite - Classement et dernière musique */}
+          <div className="space-y-6">
+            {/* Dernière musique */}
+            <LatestMusic />
+
+            {/* Probabilités */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}

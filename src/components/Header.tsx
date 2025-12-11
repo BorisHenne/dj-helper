@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Settings, Home, Music } from 'lucide-react'
+import { Settings, Home, Music, History } from 'lucide-react'
 
 export default function Header() {
   const pathname = usePathname()
@@ -34,6 +34,10 @@ export default function Header() {
             <NavLink href="/" active={pathname === '/'}>
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Accueil</span>
+            </NavLink>
+            <NavLink href="/admin/history" active={pathname === '/admin/history'}>
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Historique</span>
             </NavLink>
             <NavLink href="/admin" active={pathname === '/admin'}>
               <Settings className="w-4 h-4" />

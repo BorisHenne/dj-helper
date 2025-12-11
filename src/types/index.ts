@@ -49,3 +49,14 @@ export interface ImportResult {
   skipped: number
   errors: string[]
 }
+
+export interface DJHistory {
+  id: string
+  djName: string
+  title: string
+  artist: string
+  youtubeUrl: string
+  playedAt: string
+  createdAt: string
+  updatedAt: string
+}
