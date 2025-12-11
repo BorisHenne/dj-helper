@@ -36,3 +36,14 @@ model Settings {
   weightLastPlayed      Float   @default(0.6)  // Poids pour la date du dernier passage
   weightTotalPlays      Float   @default(0.4)  // Poids pour le nombre de passages
 }
+
+model DJHistory {
+  id          String   @id @default(cuid())
+  djName      String   // Nom du DJ
+  title       String   // Titre de la musique
+  artist      String   // Nom de l'artiste
+  youtubeUrl  String   // Lien YouTube
+  playedAt    DateTime @default(now()) // Date de passage
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
