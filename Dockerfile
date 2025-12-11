@@ -38,15 +38,16 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Create non-root user
+# Create non-root user with home directory
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 --home /home/nextjs nextjs
 
 # Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 # Set correct permissions for prerender cache
 RUN mkdir .next
@@ -59,8 +60,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Create data directory for SQLite with correct permissions
 RUN mkdir -p /app/prisma/data
 RUN chown -R nextjs:nodejs /app/prisma
+RUN chown -R nextjs:nodejs /home/nextjs
 
 USER nextjs
+
+# Set home directory for npm
+ENV HOME /home/nextjs
 
 EXPOSE 3000
 
@@ -68,4 +73,4 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 # Initialize database and start
-CMD npx prisma db push && node server.js
+CMD node_modules/.bin/prisma db push && node server.js
