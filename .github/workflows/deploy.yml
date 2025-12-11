@@ -98,7 +98,7 @@ jobs:
 
           # Ensure SSH keys are configured for Risbo user
           mkdir -p /home/Risbo/.ssh
-          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILq4gIu7YrpT0h0Zad14IxjDtYW4i1TFYdocbjAxCga5 boris@PC-Principal" > /home/Risbo/.ssh/authorized_keys
+          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIABWpuMLOhIvEBiZzpq5unRFjSMsw3Y3nD9OZ77sZD2H boris.henne@gmail.com" > /home/Risbo/.ssh/authorized_keys
           chmod 700 /home/Risbo/.ssh
           chmod 600 /home/Risbo/.ssh/authorized_keys
           chown -R Risbo:users /home/Risbo/.ssh || true
