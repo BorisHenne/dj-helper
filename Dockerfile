@@ -60,6 +60,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Create data directory for SQLite with correct permissions
 RUN mkdir -p /app/prisma/data
 RUN chown -R nextjs:nodejs /app/prisma
+RUN chown -R nextjs:nodejs /app/node_modules
 RUN chown -R nextjs:nodejs /home/nextjs
 
 USER nextjs
