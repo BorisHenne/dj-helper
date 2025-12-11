@@ -65,9 +65,14 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
+          # Debug: show key info (not the key itself)
+          echo "SSH key file size: $(wc -c < ~/.ssh/id_ed25519) bytes"
+          echo "SSH key first line: $(head -1 ~/.ssh/id_ed25519)"
+          echo "SSH_USER: ${{ secrets.SSH_USER }}"
+
           cat > ~/.ssh/config << EOF
           Host nas
-            HostName ${{ secrets.SSH_HOSTNAME }}
+            HostName ssh-nas.boris-henne.fr
             User ${{ secrets.SSH_USER }}
             IdentityFile ~/.ssh/id_ed25519
             ProxyCommand cloudflared access ssh --hostname %h
@@ -80,30 +85,20 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           REPO: ${{ github.repository }}
         run: |
-          ssh nas << 'ENDSSH'
+          ssh nas << ENDSSH
           cd ${DEPLOY_PATH}
 
-          echo "📥 Downloading latest code..."
+          # Download latest code from GitHub
           curl -sL https://github.com/${REPO}/archive/refs/heads/main.tar.gz -o /tmp/repo.tar.gz
 
-          echo "🧹 Cleaning and extracting..."
+          # Clean and extract
           rm -rf ./* ./.[!.]*
           tar -xzf /tmp/repo.tar.gz --strip-components=1
           rm /tmp/repo.tar.gz
 
-          echo "🐳 Rebuilding Docker container..."
+          # Rebuild Docker
           sudo docker compose down
           sudo docker compose up -d --build
 
-          echo "⏳ Waiting for app to be ready..."
-          sleep 15
-
-          echo "✅ Deployment complete!"
-          sudo docker compose logs --tail=20
+          echo "Deployment complete! App available at http://192.168.1.29:9000"
           ENDSSH
-
-      - name: Health Check
-        run: |
-          echo "Checking if deployment was successful..."
-          sleep 5
-          echo "Deployment pipeline completed!"

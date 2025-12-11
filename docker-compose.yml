@@ -13,7 +13,7 @@ services:
     container_name: dj-rotation
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "9000:3000"
     volumes:
       # Persist SQLite database
       - dj-data:/app/prisma/data
