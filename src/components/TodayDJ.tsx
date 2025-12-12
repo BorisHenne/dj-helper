@@ -22,7 +22,7 @@ import { getCurrentHour, getMockDate, formatDateISO } from '@/lib/dates'
 
 interface TodayDJProps {
   onSessionUpdated?: () => void
-  onRequestSpin?: (sessionId: string, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => void
+  onRequestSpin?: (sessionId: string, djId: string | null, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => void
 }
 
 export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProps) {
@@ -131,7 +131,7 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
     }
 
     setError(null)
-    onRequestSpin?.(session.id, youtubeUrl.trim(), videoInfo)
+    onRequestSpin?.(session.id, session.djId, youtubeUrl.trim(), videoInfo)
   }
 
   if (isLoading) {

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateProbabilities, selectDJByProbability } from '@/lib/probability'
 
@@ -51,10 +51,22 @@ export async function GET() {
 }
 
 // POST - Sélectionne un DJ basé sur les probabilités
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Optionally exclude a DJ (e.g., the current DJ who shouldn't be selected again)
+    let excludeDjId: string | null = null
+    try {
+      const body = await request.json()
+      excludeDjId = body.excludeDjId || null
+    } catch {
+      // No body or invalid JSON - that's fine, no exclusion
+    }
+
     const djs = await prisma.dJ.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(excludeDjId ? { id: { not: excludeDjId } } : {})
+      },
     })
 
     // Count history entries for each DJ by name

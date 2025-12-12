@@ -10,6 +10,7 @@ interface SpinningWheelProps {
   onSpinComplete: (winner: DJWithProbability) => void
   isSpinning: boolean
   setIsSpinning: (spinning: boolean) => void
+  excludeDjId?: string | null
 }
 
 export interface SpinningWheelRef {
@@ -21,6 +22,7 @@ const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
   onSpinComplete,
   isSpinning,
   setIsSpinning,
+  excludeDjId,
 }, ref) => {
   const t = useTranslations()
   const wheelRef = useRef<HTMLDivElement>(null)
@@ -55,8 +57,12 @@ const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
     setIsSpinning(true)
     setWinner(null)
 
-    // Sélectionner le gagnant côté serveur
-    const response = await fetch('/api/probability', { method: 'POST' })
+    // Sélectionner le gagnant côté serveur (exclure le DJ actuel si spécifié)
+    const response = await fetch('/api/probability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ excludeDjId: excludeDjId || null })
+    })
     const data = await response.json()
     const selectedDJ = data.selected as DJWithProbability
 
@@ -89,7 +95,7 @@ const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
         navigator.vibrate([100, 50, 100])
       }
     }, 5000)
-  }, [isSpinning, djs, rotation, setIsSpinning, onSpinComplete])
+  }, [isSpinning, djs, rotation, setIsSpinning, onSpinComplete, excludeDjId])
 
   // Expose spinWheel to parent via ref
   useImperativeHandle(ref, () => ({
