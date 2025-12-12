@@ -22,20 +22,21 @@ export async function POST(
     }
 
     const now = new Date()
+    const nowISO = now.toISOString()
 
     // Créer le play et mettre à jour le DJ en une transaction
     const result = await db.transaction(async (tx) => {
       const [play] = await tx.insert(plays).values({
         djId: id,
-        playedAt: now,
+        playedAt: nowISO,
         notes: notes || null,
       }).returning()
 
       const [updatedDj] = await tx.update(djs)
         .set({
           totalPlays: sql`${djs.totalPlays} + 1`,
-          lastPlayedAt: now,
-          updatedAt: now,
+          lastPlayedAt: nowISO,
+          updatedAt: nowISO,
         })
         .where(eq(djs.id, id))
         .returning()

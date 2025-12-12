@@ -2,24 +2,29 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
-// DJ Table
+// Helper to convert Date to ISO string for storage
+export const toISOString = (date: Date): string => date.toISOString();
+export const toDateOrNull = (value: string | null): Date | null => value ? new Date(value) : null;
+export const toDate = (value: string): Date => new Date(value);
+
+// DJ Table - dates stored as ISO strings (compatible with Prisma SQLite format)
 export const djs = sqliteTable('DJ', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   name: text('name').notNull().unique(),
   avatar: text('avatar'), // Emoji ou URL d'avatar
   color: text('color'), // Couleur personnalisée pour l'UI
   totalPlays: integer('totalPlays').notNull().default(0),
-  lastPlayedAt: integer('lastPlayedAt', { mode: 'timestamp' }),
+  lastPlayedAt: text('lastPlayedAt'), // ISO date string
   isActive: integer('isActive', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: text('createdAt').notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updatedAt').notNull().$defaultFn(() => new Date().toISOString()),
 });
 
 // Play Table
 export const plays = sqliteTable('Play', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   djId: text('djId').notNull().references(() => djs.id, { onDelete: 'cascade' }),
-  playedAt: integer('playedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  playedAt: text('playedAt').notNull().$defaultFn(() => new Date().toISOString()), // ISO date string
   notes: text('notes'), // Notes optionnelles sur le blindtest
 });
 
@@ -39,15 +44,15 @@ export const djHistory = sqliteTable('DJHistory', {
   artist: text('artist').notNull(), // Nom de l'artiste
   youtubeUrl: text('youtubeUrl').notNull(), // Lien YouTube
   videoId: text('videoId'), // ID de la vidéo YouTube (pour les thumbnails)
-  playedAt: integer('playedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()), // Date de passage
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  playedAt: text('playedAt').notNull().$defaultFn(() => new Date().toISOString()), // ISO date string
+  createdAt: text('createdAt').notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updatedAt').notNull().$defaultFn(() => new Date().toISOString()),
 });
 
 // DailySession Table
 export const dailySessions = sqliteTable('DailySession', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  date: integer('date', { mode: 'timestamp' }).notNull().unique(), // Date de la session (jour ouvrable)
+  date: text('date').notNull().unique(), // ISO date string - Date de la session (jour ouvrable)
   djId: text('djId'), // DJ assigné (null si pas encore assigné)
   djName: text('djName').notNull(), // Nom du DJ (copié pour l'historique)
   status: text('status').notNull().default('pending'), // pending, completed, skipped
@@ -56,8 +61,8 @@ export const dailySessions = sqliteTable('DailySession', {
   title: text('title'), // Titre de la musique
   artist: text('artist'), // Artiste
   skipReason: text('skipReason'), // Raison de l'annulation (ex: "Daily annulée")
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: text('createdAt').notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updatedAt').notNull().$defaultFn(() => new Date().toISOString()),
 });
 
 // Relations

@@ -55,14 +55,14 @@ export async function PATCH(
     }
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     }
     if (djName !== undefined) updateData.djName = djName.trim()
     if (title !== undefined) updateData.title = title.trim()
     if (artist !== undefined) updateData.artist = artist.trim()
     if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl.trim()
     if (videoId !== undefined) updateData.videoId = videoId
-    if (playedAt !== undefined) updateData.playedAt = new Date(playedAt)
+    if (playedAt !== undefined) updateData.playedAt = new Date(playedAt).toISOString()
 
     const [entry] = await db.update(djHistory)
       .set(updateData)

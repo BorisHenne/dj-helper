@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const [session] = await db.select()
       .from(dailySessions)
       .where(and(
-        gte(dailySessions.date, today),
-        lte(dailySessions.date, todayEnd)
+        gte(dailySessions.date, today.toISOString()),
+        lte(dailySessions.date, todayEnd.toISOString())
       ))
       .limit(1)
 

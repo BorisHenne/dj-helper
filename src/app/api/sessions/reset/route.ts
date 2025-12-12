@@ -27,7 +27,7 @@ export async function POST() {
 
     // Créer la session du 12/12/2025 (annulée)
     const [skippedSession] = await db.insert(dailySessions).values({
-      date: new Date('2025-12-12T00:00:00.000Z'),
+      date: new Date('2025-12-12T00:00:00.000Z').toISOString(),
       djId: null,
       djName: 'A. Gautier',
       status: 'skipped',
@@ -36,7 +36,7 @@ export async function POST() {
 
     // Créer la session du 15/12/2025 (A. Gautier en pending)
     const [nextSession] = await db.insert(dailySessions).values({
-      date: new Date('2025-12-15T00:00:00.000Z'),
+      date: new Date('2025-12-15T00:00:00.000Z').toISOString(),
       djId: gautierDj.id,
       djName: gautierDj.name,
       status: 'pending'

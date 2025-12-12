@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       title,
       artist,
       youtubeUrl: urlValidation.url!,
-      playedAt: playedAt && typeof playedAt === 'string' ? new Date(playedAt) : new Date(),
+      playedAt: playedAt && typeof playedAt === 'string' ? new Date(playedAt).toISOString() : new Date().toISOString(),
     }).returning()
 
     return NextResponse.json(entry, { status: 201 })

@@ -40,7 +40,7 @@ export async function PATCH(
     const { name, avatar, color, isActive, totalPlays, lastPlayedAt } = body
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     }
 
     if (name !== undefined) updateData.name = name.trim()
@@ -49,7 +49,7 @@ export async function PATCH(
     if (isActive !== undefined) updateData.isActive = isActive
     if (totalPlays !== undefined) updateData.totalPlays = totalPlays
     if (lastPlayedAt !== undefined) {
-      updateData.lastPlayedAt = lastPlayedAt ? new Date(lastPlayedAt) : null
+      updateData.lastPlayedAt = lastPlayedAt ? new Date(lastPlayedAt).toISOString() : null
     }
 
     const [dj] = await db.update(djs)
