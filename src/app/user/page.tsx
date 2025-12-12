@@ -145,43 +145,43 @@ export default function UserPage() {
     <div className="min-h-screen">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             <span className="text-glow-sm text-neon-pink">{t('user.title')}</span>
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm sm:text-base">
             {t('user.subtitle')}
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Section principale - Liste des DJs */}
           <div className="lg:col-span-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass rounded-2xl p-6"
+              className="glass rounded-2xl p-4 sm:p-6"
             >
               {/* Header avec actions */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <User className="w-5 h-5 text-neon-blue" />
-                  {t('user.participants')} ({djs.length})
+              <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                  <User className="w-5 h-5 text-neon-blue flex-shrink-0" />
+                  <span className="hidden xs:inline">{t('user.participants')}</span>
+                  <span className="text-sm font-normal text-gray-400">({djs.length})</span>
                 </h2>
 
                 <motion.button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2"
-                  whileHover={{ scale: 1.05 }}
+                  className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2 tap-target flex-shrink-0"
                   whileTap={{ scale: 0.95 }}
                 >
                   <Plus className="w-4 h-4" />
-                  {t('common.add')}
+                  <span className="hidden xs:inline">{t('common.add')}</span>
                 </motion.button>
               </div>
 
@@ -193,9 +193,9 @@ export default function UserPage() {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     onSubmit={handleAddDj}
-                    className="mb-6 p-4 bg-white/5 rounded-xl"
+                    className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white/5 rounded-xl overflow-hidden"
                   >
-                    <div className="grid sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="text-sm text-gray-400 mb-1 block">{t('common.name')}</label>
                         <input
@@ -216,7 +216,7 @@ export default function UserPage() {
                               key={emoji}
                               type="button"
                               onClick={() => setNewDj({ ...newDj, avatar: emoji })}
-                              className={`text-xl p-1 rounded ${
+                              className={`text-xl p-1 rounded tap-target ${
                                 newDj.avatar === emoji ? 'bg-neon-pink/30' : 'hover:bg-white/10'
                               }`}
                             >
@@ -241,13 +241,13 @@ export default function UserPage() {
                       <button
                         type="button"
                         onClick={() => setShowAddForm(false)}
-                        className="px-4 py-2 text-gray-400 hover:text-white"
+                        className="px-4 py-2 text-gray-400 hover:text-white tap-target"
                       >
                         {t('common.cancel')}
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-green-500 rounded-lg font-bold"
+                        className="px-4 py-2 bg-green-500 rounded-lg font-bold tap-target"
                       >
                         {t('common.add')}
                       </button>
@@ -272,26 +272,26 @@ export default function UserPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {djs.map((dj) => (
                     <motion.div
                       key={dj.id}
                       layout
-                      className={`p-4 rounded-xl flex items-center gap-4 ${
+                      className={`p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-4 ${
                         dj.isActive ? 'bg-white/5' : 'bg-white/5 opacity-50'
                       }`}
                     >
                       {editingId === dj.id ? (
-                        // Mode édition
-                        <>
-                          <div className="flex-shrink-0">
-                            <div className="flex flex-wrap gap-1 max-w-[100px]">
-                              {AVATAR_EMOJIS.slice(0, 10).map((emoji) => (
+                        // Mode édition - simplifié sur mobile
+                        <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center">
+                          <div className="flex gap-2 items-center">
+                            <div className="flex flex-wrap gap-1 max-w-[80px] sm:max-w-[100px]">
+                              {AVATAR_EMOJIS.slice(0, 8).map((emoji) => (
                                 <button
                                   key={emoji}
                                   type="button"
                                   onClick={() => setEditDj({ ...editDj, avatar: emoji })}
-                                  className={`text-lg p-0.5 rounded ${
+                                  className={`text-base sm:text-lg p-0.5 rounded ${
                                     editDj.avatar === emoji ? 'bg-neon-pink/30' : ''
                                   }`}
                                 >
@@ -301,12 +301,12 @@ export default function UserPage() {
                             </div>
                           </div>
 
-                          <div className="flex-grow grid sm:grid-cols-3 gap-2">
+                          <div className="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <input
                               type="text"
                               value={editDj.name || ''}
                               onChange={(e) => setEditDj({ ...editDj, name: e.target.value })}
-                              className="text-sm"
+                              className="text-sm col-span-2 sm:col-span-1"
                             />
                             <input
                               type="number"
@@ -323,34 +323,34 @@ export default function UserPage() {
                             />
                           </div>
 
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 justify-end">
                             <button
                               onClick={() => handleUpdateDj(dj.id)}
-                              className="p-2 text-green-500 hover:bg-green-500/20 rounded-lg"
+                              className="p-2 text-green-500 hover:bg-green-500/20 rounded-lg tap-target"
                             >
                               <Save className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => { setEditingId(null); setEditDj({}); }}
-                              className="p-2 text-gray-400 hover:bg-white/10 rounded-lg"
+                              className="p-2 text-gray-400 hover:bg-white/10 rounded-lg tap-target"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                        </>
+                        </div>
                       ) : (
                         // Mode affichage
                         <>
                           <div
-                            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                            className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl"
                             style={{ backgroundColor: dj.color || '#ff6ec7' }}
                           >
                             {dj.avatar || '🎧'}
                           </div>
 
                           <div className="flex-grow min-w-0">
-                            <h3 className="font-bold truncate">{dj.name}</h3>
-                            <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <h3 className="font-bold truncate text-sm sm:text-base">{dj.name}</h3>
+                            <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-400">
                               <span className="flex items-center gap-1">
                                 <Hash className="w-3 h-3" />
                                 {dj.totalPlays}
@@ -362,10 +362,10 @@ export default function UserPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                             <button
                               onClick={() => handleToggleActive(dj.id, dj.isActive)}
-                              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                              className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-colors tap-target ${
                                 dj.isActive
                                   ? 'bg-green-500/20 text-green-400'
                                   : 'bg-gray-500/20 text-gray-400'
@@ -375,13 +375,13 @@ export default function UserPage() {
                             </button>
                             <button
                               onClick={() => startEdit(dj)}
-                              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+                              className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg tap-target"
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteDj(dj.id, dj.name)}
-                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg"
+                              className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg tap-target"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -400,22 +400,22 @@ export default function UserPage() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass rounded-2xl p-6 sticky top-24"
+              className="glass rounded-2xl p-4 sm:p-6 sticky top-24"
             >
-              <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
+              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 mb-4 sm:mb-6">
                 <Sliders className="w-5 h-5 text-neon-yellow" />
                 {t('user.settings')}
               </h2>
 
               {settings && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Poids ancienneté */}
                   <div>
                     <div className="flex justify-between mb-2">
-                      <label className="text-sm text-gray-400">
+                      <label className="text-xs sm:text-sm text-gray-400">
                         {t('user.weightSeniority')}
                       </label>
-                      <span className="text-neon-pink font-bold">
+                      <span className="text-neon-pink font-bold text-sm">
                         {(settings.weightLastPlayed * 100).toFixed(0)}%
                       </span>
                     </div>
@@ -438,10 +438,10 @@ export default function UserPage() {
                   {/* Poids nombre de passages */}
                   <div>
                     <div className="flex justify-between mb-2">
-                      <label className="text-sm text-gray-400">
+                      <label className="text-xs sm:text-sm text-gray-400">
                         {t('user.weightPlayCount')}
                       </label>
-                      <span className="text-neon-blue font-bold">
+                      <span className="text-neon-blue font-bold text-sm">
                         {(settings.weightTotalPlays * 100).toFixed(0)}%
                       </span>
                     </div>
