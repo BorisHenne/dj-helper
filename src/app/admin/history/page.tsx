@@ -36,6 +36,10 @@ export default function HistoryPage() {
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Cache for video IDs fetched from search API
+  const [videoIdCache, setVideoIdCache] = useState<Record<string, string>>({})
+  const [loadingVideoIds, setLoadingVideoIds] = useState<Set<string>>(new Set())
+
   // Filtered history based on search
   const filteredHistory = history.filter(entry => {
     if (!searchQuery.trim()) return true
@@ -213,6 +217,60 @@ export default function HistoryPage() {
     return match && match[7].length === 11 ? match[7] : null
   }
 
+  // Fetch video ID from search API based on artist and title
+  const fetchVideoIdFromSearch = useCallback(async (entryId: string, artist: string, title: string) => {
+    // Skip if already loading or cached
+    if (loadingVideoIds.has(entryId) || videoIdCache[entryId]) return
+
+    setLoadingVideoIds(prev => new Set(prev).add(entryId))
+
+    try {
+      const response = await fetch(
+        `/api/youtube/search?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.videoId) {
+          setVideoIdCache(prev => ({ ...prev, [entryId]: data.videoId }))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch video ID:', error)
+    } finally {
+      setLoadingVideoIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(entryId)
+        return newSet
+      })
+    }
+  }, [loadingVideoIds, videoIdCache])
+
+  // Get video ID for an entry (from URL or cache)
+  const getEntryVideoId = useCallback((entry: DJHistory): string | null => {
+    // First try to extract from URL
+    const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
+    if (urlVideoId) return urlVideoId
+
+    // Then check cache
+    return videoIdCache[entry.id] || null
+  }, [videoIdCache])
+
+  // Effect to fetch video IDs for entries without valid URLs
+  useEffect(() => {
+    // Batch fetch video IDs for entries that need them
+    const entriesToFetch = filteredHistory.filter(entry => {
+      const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
+      return !urlVideoId && !videoIdCache[entry.id] && !loadingVideoIds.has(entry.id)
+    })
+
+    // Limit concurrent fetches to avoid rate limiting
+    const fetchLimit = 5
+    entriesToFetch.slice(0, fetchLimit).forEach(entry => {
+      fetchVideoIdFromSearch(entry.id, entry.artist, entry.title)
+    })
+  }, [filteredHistory, videoIdCache, loadingVideoIds, fetchVideoIdFromSearch])
+
   // Player functions
   const playVideo = (index: number) => {
     setCurrentPlayingIndex(index)
@@ -237,7 +295,7 @@ export default function HistoryPage() {
   }
 
   const currentVideo = currentPlayingIndex >= 0 ? filteredHistory[currentPlayingIndex] : null
-  const currentVideoId = currentVideo ? getYoutubeVideoId(currentVideo.youtubeUrl) : null
+  const currentVideoId = currentVideo ? getEntryVideoId(currentVideo) : null
 
   return (
     <div className="min-h-screen">
@@ -576,25 +634,46 @@ export default function HistoryPage() {
                         <>
                           {/* Thumbnail */}
                           <td className="py-2 px-2">
-                            {getYoutubeVideoId(entry.youtubeUrl) ? (
-                              <button
-                                onClick={() => playVideo(index)}
-                                className="relative group/thumb block w-16 h-10 rounded overflow-hidden bg-black"
-                              >
-                                <img
-                                  src={`https://img.youtube.com/vi/${getYoutubeVideoId(entry.youtubeUrl)}/default.jpg`}
-                                  alt={entry.title}
-                                  className="w-full h-full object-cover opacity-80 group-hover/thumb:opacity-100 transition-opacity"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/thumb:bg-black/10 transition-colors">
-                                  <Play className="w-4 h-4 text-white" />
-                                </div>
-                              </button>
-                            ) : (
-                              <div className="w-16 h-10 rounded bg-white/5 flex items-center justify-center">
-                                <Music className="w-4 h-4 text-gray-500" />
-                              </div>
-                            )}
+                            {(() => {
+                              const videoId = getEntryVideoId(entry)
+                              const isLoading = loadingVideoIds.has(entry.id)
+
+                              if (videoId) {
+                                return (
+                                  <button
+                                    onClick={() => playVideo(index)}
+                                    className="relative group/thumb block w-16 h-10 rounded overflow-hidden bg-black"
+                                  >
+                                    <img
+                                      src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
+                                      alt={entry.title}
+                                      className="w-full h-full object-cover opacity-80 group-hover/thumb:opacity-100 transition-opacity"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/thumb:bg-black/10 transition-colors">
+                                      <Play className="w-4 h-4 text-white" />
+                                    </div>
+                                  </button>
+                                )
+                              }
+
+                              if (isLoading) {
+                                return (
+                                  <div className="w-16 h-10 rounded bg-white/5 flex items-center justify-center">
+                                    <Loader2 className="w-4 h-4 text-neon-blue animate-spin" />
+                                  </div>
+                                )
+                              }
+
+                              return (
+                                <button
+                                  onClick={() => fetchVideoIdFromSearch(entry.id, entry.artist, entry.title)}
+                                  className="w-16 h-10 rounded bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors group/retry"
+                                  title={locale === 'fr' ? 'Cliquer pour rechercher la vidéo' : 'Click to search for video'}
+                                >
+                                  <Music className="w-4 h-4 text-gray-500 group-hover/retry:text-neon-pink transition-colors" />
+                                </button>
+                              )
+                            })()}
                           </td>
                           <td className="py-3 px-4 text-sm text-gray-300">
                             {formatDate(entry.playedAt)}
