@@ -53,11 +53,16 @@ export async function GET() {
 // POST - Sélectionne un DJ basé sur les probabilités
 export async function POST(request: NextRequest) {
   try {
-    // Optionally exclude a DJ (e.g., the current DJ who shouldn't be selected again)
-    let excludeDjId: string | null = null
+    // Optionally exclude DJs (e.g., the current DJ and refused DJs)
+    let excludeDjIds: string[] = []
     try {
       const body = await request.json()
-      excludeDjId = body.excludeDjId || null
+      // Support both old single excludeDjId and new array excludeDjIds
+      if (body.excludeDjIds && Array.isArray(body.excludeDjIds)) {
+        excludeDjIds = body.excludeDjIds.filter((id: unknown) => typeof id === 'string' && id)
+      } else if (body.excludeDjId) {
+        excludeDjIds = [body.excludeDjId]
+      }
     } catch {
       // No body or invalid JSON - that's fine, no exclusion
     }
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
     const djs = await prisma.dJ.findMany({
       where: {
         isActive: true,
-        ...(excludeDjId ? { id: { not: excludeDjId } } : {})
+        ...(excludeDjIds.length > 0 ? { id: { notIn: excludeDjIds } } : {})
       },
     })
 

@@ -47,6 +47,9 @@ export default function HomePage() {
   // Pending completion (quand le DJ du jour lance la roue)
   const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null)
 
+  // DJs refusés (exclus de la prochaine sélection)
+  const [refusedDjIds, setRefusedDjIds] = useState<string[]>([])
+
   // Refs
   const wheelContainerRef = useRef<HTMLDivElement>(null)
   const spinningWheelRef = useRef<SpinningWheelRef>(null)
@@ -206,6 +209,7 @@ export default function HomePage() {
       await fetchNextBusinessDay()
       setWinner(null)
       setIsSelectingForDate(null)
+      setRefusedDjIds([])  // Reset les DJs refusés
       setRefreshKey(prev => prev + 1)
     } catch (error) {
       console.error('Failed to confirm winner:', error)
@@ -214,10 +218,25 @@ export default function HomePage() {
     }
   }
 
+  // Callback quand un DJ refuse (relancer la roue en l'excluant)
+  const handleRefuseWinner = () => {
+    if (!winner) return
+
+    // Ajouter le DJ refusé à la liste des exclus
+    setRefusedDjIds(prev => [...prev, winner.id])
+    setWinner(null)
+
+    // Relancer la roue automatiquement
+    setTimeout(() => {
+      spinningWheelRef.current?.triggerSpin()
+    }, 300)
+  }
+
   const handleReset = () => {
     setWinner(null)
     setIsSelectingForDate(null)
     setPendingCompletion(null)
+    setRefusedDjIds([])  // Reset les DJs refusés
     fetchProbabilities()
   }
 
@@ -325,7 +344,10 @@ export default function HomePage() {
                 onSpinComplete={handleSpinComplete}
                 isSpinning={isSpinning}
                 setIsSpinning={setIsSpinning}
-                excludeDjId={pendingCompletion?.djId}
+                excludeDjIds={[
+                  ...(pendingCompletion?.djId ? [pendingCompletion.djId] : []),
+                  ...refusedDjIds
+                ]}
               />
             )}
 
@@ -349,15 +371,9 @@ export default function HomePage() {
                   <ConfirmButton
                     winner={winner}
                     onConfirm={handleConfirmWinner}
+                    onRefuse={handleRefuseWinner}
                     isLoading={isConfirming}
                   />
-                  <button
-                    onClick={handleReset}
-                    className="mt-2 w-full py-2 text-gray-400 hover:text-white flex items-center justify-center gap-2 transition-colors text-sm"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t('common.restart')}
-                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
