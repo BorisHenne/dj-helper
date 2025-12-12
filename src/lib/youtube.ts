@@ -11,6 +11,13 @@ export interface YouTubeVideoInfo {
   videoId: string
 }
 
+export interface YouTubeSearchResult {
+  videoId: string
+  title: string
+  channelName: string
+  thumbnailUrl: string
+}
+
 /**
  * Extract video ID from various YouTube URL formats
  */
@@ -30,26 +37,49 @@ export function extractVideoId(url: string): string | null {
 
 /**
  * Parse video title to extract artist and song title
- * Common formats: "Artist - Title", "Artist | Title", "Title by Artist"
+ * Improved algorithm with more patterns and cleanup
  */
-function parseVideoTitle(rawTitle: string): { title: string; artist: string } {
-  // Remove common suffixes like (Official Video), [Lyrics], etc.
+function parseVideoTitle(rawTitle: string, channelName?: string): { title: string; artist: string } {
+  // Remove common video tags and suffixes
   let cleanTitle = rawTitle
-    .replace(/\s*[\(\[].*?(official|video|audio|lyrics|clip|hd|4k|remaster|live).*?[\)\]]\s*/gi, '')
-    .replace(/\s*[\(\[].*?[\)\]]\s*$/, '') // Remove trailing parentheses content
+    // Remove things in parentheses/brackets with common keywords
+    .replace(/\s*[\(\[].*?(official|video|audio|lyrics|lyric|clip|hd|4k|1080p|720p|remaster|remastered|live|acoustic|remix|cover|version|edit|extended|music video|mv|pv|visualizer|visualiser).*?[\)\]]\s*/gi, '')
+    // Remove year in parentheses like (2023)
+    .replace(/\s*[\(\[]\d{4}[\)\]]\s*/g, '')
+    // Remove ft./feat. at the end
+    .replace(/\s*[\(\[]?(?:ft\.?|feat\.?|featuring)\s+[^\)\]]+[\)\]]?\s*$/gi, '')
+    // Remove trailing parentheses/brackets content
+    .replace(/\s*[\(\[].*?[\)\]]\s*$/g, '')
+    // Remove quotes
+    .replace(/[""'']/g, '')
+    // Remove multiple spaces
+    .replace(/\s+/g, ' ')
     .trim()
 
-  // Try different separators
-  const separators = [' - ', ' – ', ' — ', ' | ', ' // ']
+  // Try different separators (order matters - try longer ones first)
+  const separators = [' - ', ' – ', ' — ', ' | ', ' // ', ': ', ' : ']
 
   for (const sep of separators) {
     if (cleanTitle.includes(sep)) {
       const parts = cleanTitle.split(sep)
       if (parts.length >= 2) {
-        return {
-          artist: parts[0].trim(),
-          title: parts.slice(1).join(sep).trim(),
+        // First part is usually artist, rest is title
+        let artist = parts[0].trim()
+        let title = parts.slice(1).join(sep).trim()
+
+        // Clean up common prefixes from artist
+        artist = artist.replace(/^(vevo|topic|official)\s*[-–—]?\s*/i, '').trim()
+
+        // If title contains another separator, it might be "Artist - Song - Extra"
+        // Keep only the song part
+        for (const sep2 of separators) {
+          if (title.includes(sep2)) {
+            title = title.split(sep2)[0].trim()
+            break
+          }
         }
+
+        return { artist, title }
       }
     }
   }
@@ -63,11 +93,36 @@ function parseVideoTitle(rawTitle: string): { title: string; artist: string } {
     }
   }
 
+  // Try to extract from channel name if it looks like an artist
+  if (channelName) {
+    const cleanChannel = channelName
+      .replace(/\s*[-–—]\s*(topic|vevo|official|music)$/i, '')
+      .replace(/\s+(vevo|official|music)$/i, '')
+      .trim()
+
+    // If channel name is not generic, use it as artist
+    const genericChannels = ['youtube', 'music', 'video', 'official', 'vevo', 'topic']
+    if (!genericChannels.some(g => cleanChannel.toLowerCase() === g)) {
+      return {
+        title: cleanTitle,
+        artist: cleanChannel,
+      }
+    }
+  }
+
   // Fallback: use the whole title as title, empty artist
   return {
     title: cleanTitle,
     artist: '',
   }
+}
+
+/**
+ * Generate YouTube search URL for artist + title
+ */
+export function getYouTubeSearchUrl(artist: string, title: string): string {
+  const query = `${artist} ${title}`.trim()
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
 }
 
 /**
@@ -84,13 +139,15 @@ export async function fetchYouTubeInfo(url: string): Promise<YouTubeVideoInfo | 
     if (!response.ok) return null
 
     const data = await response.json()
+    const channelName = data.author_name || ''
 
-    const { title, artist } = parseVideoTitle(data.title || '')
+    // Parse title with channel name for better artist detection
+    const { title, artist } = parseVideoTitle(data.title || '', channelName)
 
     return {
       title,
-      artist: artist || data.author_name || '',
-      channelName: data.author_name || '',
+      artist: artist || channelName,
+      channelName,
       thumbnailUrl: data.thumbnail_url || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
       videoId,
     }

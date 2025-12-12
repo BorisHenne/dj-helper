@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
 import YouTubePlayer, { PlayButton } from '@/components/YouTubePlayer'
-import { DJHistory } from '@/types'
+import { DJHistory, DJ } from '@/types'
 import { useTranslations, useLocale } from 'next-intl'
 import {
   Plus,
@@ -20,12 +20,14 @@ import {
   ExternalLink,
   Play,
   Search,
+  ChevronDown,
 } from 'lucide-react'
 
 export default function HistoryPage() {
   const t = useTranslations()
   const locale = useLocale()
   const [history, setHistory] = useState<DJHistory[]>([])
+  const [djs, setDjs] = useState<DJ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -99,9 +101,28 @@ export default function HistoryPage() {
     }
   }, [])
 
+  const fetchDjs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/djs')
+      const data = await response.json()
+      setDjs(data.filter((dj: DJ) => dj.isActive))
+    } catch (error) {
+      console.error('Failed to fetch DJs:', error)
+    }
+  }, [])
+
+  // Open YouTube search in new tab
+  const searchYouTube = () => {
+    if (newEntry.artist || newEntry.title) {
+      const query = `${newEntry.artist} ${newEntry.title}`.trim()
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank')
+    }
+  }
+
   useEffect(() => {
     fetchHistory()
-  }, [fetchHistory])
+    fetchDjs()
+  }, [fetchHistory, fetchDjs])
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -324,42 +345,28 @@ export default function HistoryPage() {
                 className="mb-6 p-4 bg-white/5 rounded-xl"
               >
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* DJ Dropdown */}
                   <div>
                     <label className="text-sm text-gray-400 mb-1 block">{t('history.djName')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.djName}
-                      onChange={(e) => setNewEntry({ ...newEntry, djName: e.target.value })}
-                      placeholder="Ex: DJ Max"
-                      className="w-full"
-                      required
-                    />
+                    <div className="relative">
+                      <select
+                        value={newEntry.djName}
+                        onChange={(e) => setNewEntry({ ...newEntry, djName: e.target.value })}
+                        className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 focus:border-neon-blue focus:outline-none"
+                        required
+                      >
+                        <option value="" className="bg-gray-900">{locale === 'fr' ? 'Sélectionner un DJ' : 'Select a DJ'}</option>
+                        {djs.map(dj => (
+                          <option key={dj.id} value={dj.name} className="bg-gray-900">
+                            {dj.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.title}
-                      onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                      placeholder="Ex: Bohemian Rhapsody"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.artist}
-                      onChange={(e) => setNewEntry({ ...newEntry, artist: e.target.value })}
-                      placeholder="Ex: Queen"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-
+                  {/* YouTube URL - First so auto-fill can populate other fields */}
                   <div className="sm:col-span-2">
                     <label className="text-sm text-gray-400 mb-1 block">{t('history.youtubeUrl')}</label>
                     <div className="flex gap-2">
@@ -392,6 +399,46 @@ export default function HistoryPage() {
                         {t('history.fetchingInfo')}
                       </p>
                     )}
+                  </div>
+
+                  {/* Artist */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.artist}
+                      onChange={(e) => setNewEntry({ ...newEntry, artist: e.target.value })}
+                      placeholder="Ex: Queen"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Song Title */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.title}
+                      onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                      placeholder="Ex: Bohemian Rhapsody"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Search YouTube button */}
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={searchYouTube}
+                      disabled={!newEntry.artist && !newEntry.title}
+                      className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                      title={locale === 'fr' ? 'Rechercher sur YouTube' : 'Search on YouTube'}
+                    >
+                      <Youtube className="w-4 h-4" />
+                      <span>{locale === 'fr' ? 'Rechercher' : 'Search'}</span>
+                    </button>
                   </div>
 
                   <div>
