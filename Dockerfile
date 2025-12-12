@@ -42,18 +42,18 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 --home /home/nextjs nextjs
 
 # Copy necessary files
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # Copy Drizzle config and schema
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
-COPY --from=builder /app/src/db ./src/db
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/src/db ./src/db
 
 # Copy seed files and data
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy node_modules for runtime (better-sqlite3, drizzle-orm, etc.)
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Set correct permissions for prerender cache
 RUN mkdir .next
@@ -63,13 +63,8 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Create data directory for SQLite with correct permissions
-RUN mkdir -p /app/prisma/data
-RUN chown -R nextjs:nodejs /app/prisma
-RUN chown -R nextjs:nodejs /app/node_modules
-RUN chown -R nextjs:nodejs /app/public
-RUN chown -R nextjs:nodejs /app/src
-RUN chown -R nextjs:nodejs /home/nextjs
+# Ensure data directory exists with correct permissions
+RUN mkdir -p /app/prisma/data && chown -R nextjs:nodejs /app/prisma/data
 
 USER nextjs
 
