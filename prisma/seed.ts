@@ -31,6 +31,7 @@ const defaultHistory = JSON.parse(
   artist: string
   title: string
   youtubeUrl?: string
+  videoId?: string
 }>
 
 async function main() {
@@ -113,12 +114,18 @@ async function main() {
       continue
     }
 
+    // Generate YouTube URL from videoId if available, otherwise use search URL
+    const youtubeUrl = entry.videoId
+      ? `https://www.youtube.com/watch?v=${entry.videoId}`
+      : entry.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`
+
     await db.insert(djHistory).values({
       id: createId(),
       djName: entry.djName,
       artist: entry.artist,
       title: entry.title,
-      youtubeUrl: entry.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`,
+      youtubeUrl,
+      videoId: entry.videoId || null,
       playedAt: new Date(entry.date).toISOString(),
     })
     console.log(`  ✓ ${entry.date}: ${entry.djName} - ${entry.artist} - ${entry.title}`)
