@@ -17,7 +17,6 @@ import {
   RefreshCw,
   Loader2,
   Sparkles,
-  ExternalLink,
   Play,
   Search,
   ChevronDown,
@@ -606,15 +605,13 @@ export default function HistoryPage() {
                             {entry.artist}
                           </td>
                           <td className="py-3 px-4 text-sm">
-                            <a
-                              href={entry.youtubeUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-neon-blue transition-colors flex items-center gap-1"
+                            <button
+                              onClick={() => playVideo(index)}
+                              className="hover:text-neon-blue transition-colors flex items-center gap-1 text-left"
                             >
                               {entry.title}
-                              <ExternalLink className="w-3 h-3 opacity-50" />
-                            </a>
+                              <Play className="w-3 h-3 opacity-50" />
+                            </button>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-1">
