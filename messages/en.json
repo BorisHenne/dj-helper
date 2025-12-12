@@ -2,7 +2,7 @@
   "common": {
     "home": "Home",
     "history": "History",
-    "admin": "Admin",
+    "user": "Manage",
     "add": "Add",
     "edit": "Edit",
     "delete": "Delete",
@@ -45,7 +45,7 @@
     "viewHistory": "View History",
     "probabilities": "Probabilities",
     "noDjsYet": "No DJs yet",
-    "addParticipantsInAdmin": "Add participants in the admin panel",
+    "addParticipantsInAdmin": "Add participants in the Manage page",
     "noDjActive": "No active DJ at the moment.",
     "djOfTheDayIs": "The DJ of the day is...",
     "probability": "Probability",
@@ -75,8 +75,8 @@
     "searchOnYoutube": "Search on YouTube",
     "searchingVideo": "Searching for video..."
   },
-  "admin": {
-    "title": "Administration",
+  "user": {
+    "title": "Management",
     "subtitle": "Manage participants and application settings",
     "addDj": "Add DJ",
     "editDj": "Edit DJ",
@@ -92,23 +92,14 @@
     "settings": "Settings",
     "weightLastPlayed": "Weight: Last Played",
     "weightTotalPlays": "Weight: Total Plays",
-    "importExport": "Import/Export",
-    "downloadTemplate": "Download Template",
-    "importFile": "Import File",
     "participants": "Participants",
-    "importExcel": "Import Excel",
-    "template": "Template",
     "noParticipants": "No participants",
-    "addDjsOrImport": "Add DJs manually or import an Excel file",
+    "addParticipantsHint": "Click \"Add\" to create a new participant",
     "deleteConfirm": "Delete {name} permanently?",
     "weightSeniority": "Seniority weight",
     "weightSeniorityDescription": "The higher the weight, the more DJs who haven't played in a while will be favored",
     "weightPlayCount": "Play count weight",
-    "weightPlayCountDescription": "The higher the weight, the more DJs with fewer sessions will be favored",
-    "excelImportFormat": "Excel import format",
-    "columnA": "Column A: DJ Name",
-    "columnB": "Column B: Number of sessions",
-    "columnC": "Column C: Last session date"
+    "weightPlayCountDescription": "The higher the weight, the more DJs with fewer sessions will be favored"
   },
   "validation": {
     "required": "This field is required",
