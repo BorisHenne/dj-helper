@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { DailySession, TodaySessionResponse } from '@/types'
+import { DailySession, TodaySessionResponse, NextSessionResponse } from '@/types'
 import {
   Music,
   User,
@@ -12,7 +12,8 @@ import {
   Check,
   Link as LinkIcon,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowRight
 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -32,13 +33,30 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
   const [videoInfo, setVideoInfo] = useState<{ title: string; artist: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showingNextSession, setShowingNextSession] = useState(false)
+
+  const isAfterNoon = () => new Date().getHours() >= 12
 
   const fetchTodaySession = async () => {
     try {
       const response = await fetch('/api/sessions/today')
       const data: TodaySessionResponse = await response.json()
+
+      // Si après midi et session terminée/annulée, afficher la prochaine session
+      if (isAfterNoon() && data.session && (data.session.status === 'skipped' || data.session.status === 'completed')) {
+        const nextResponse = await fetch('/api/sessions/next')
+        const nextData: NextSessionResponse = await nextResponse.json()
+        if (nextData.session && !nextData.isToday) {
+          setSession(nextData.session)
+          setShowingNextSession(true)
+          setIsBusinessDay(true)
+          return
+        }
+      }
+
       setSession(data.session)
       setIsBusinessDay(data.isBusinessDay)
+      setShowingNextSession(false)
     } catch (error) {
       console.error('Failed to fetch today\'s session:', error)
     } finally {
@@ -255,7 +273,7 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
     )
   }
 
-  // Session en cours (pending) - Afficher le formulaire
+  // Session en cours (pending) - Afficher le formulaire ou la prochaine session
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -263,12 +281,21 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
       className="glass rounded-2xl p-6"
     >
       <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
-        <Music className="w-5 h-5 text-neon-pink" />
-        {t('session.todayDj')}
+        {showingNextSession ? (
+          <>
+            <ArrowRight className="w-5 h-5 text-neon-blue" />
+            {t('session.nextDj')}
+          </>
+        ) : (
+          <>
+            <Music className="w-5 h-5 text-neon-pink" />
+            {t('session.todayDj')}
+          </>
+        )}
       </h3>
 
       {/* DJ Info */}
-      <div className="flex items-center gap-4 mb-6 p-4 bg-gradient-to-r from-neon-pink/10 to-neon-blue/10 rounded-xl">
+      <div className={`flex items-center gap-4 ${showingNextSession ? 'mb-4' : 'mb-6'} p-4 bg-gradient-to-r ${showingNextSession ? 'from-neon-blue/10 to-neon-green/10' : 'from-neon-pink/10 to-neon-blue/10'} rounded-xl`}>
         <div className="text-5xl">🎧</div>
         <div>
           <h4 className="font-bold text-2xl text-white">{session.djName}</h4>
@@ -278,6 +305,13 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
           </p>
         </div>
       </div>
+
+      {/* Si on montre la prochaine session, pas de formulaire YouTube */}
+      {showingNextSession && (
+        <p className="text-center text-gray-500 text-sm">
+          {t('session.upcomingSession')}
+        </p>
+      )}
 
       {/* Success Message */}
       <AnimatePresence>
@@ -294,8 +328,8 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
         )}
       </AnimatePresence>
 
-      {/* YouTube Form */}
-      {!success && (
+      {/* YouTube Form - seulement pour la session du jour */}
+      {!success && !showingNextSession && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-gray-400 mb-2">

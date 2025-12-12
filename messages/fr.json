@@ -132,7 +132,9 @@
   },
   "session": {
     "todayDj": "DJ du Jour",
+    "nextDj": "Prochain DJ",
     "nextSession": "Prochaine session",
+    "upcomingSession": "Session à venir",
     "noSessionToday": "Pas de session planifiée aujourd'hui",
     "selectNextDj": "Utilisez la roue pour sélectionner le prochain DJ",
     "useWheelToSelect": "Utilisez la roue pour sélectionner un DJ",
