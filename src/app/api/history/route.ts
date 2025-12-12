@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {
+  validatePayloadSize,
+  sanitizeString,
+  validateYouTubeUrl,
+  containsInjection,
+  MAX_PAYLOAD_SIZE,
+  MAX_STRING_LENGTH,
+} from '@/lib/security'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
 
-// Génère un CUID simple
-function generateCuid(): string {
+// Génère un CUID sécurisé avec crypto
+function generateSecureCuid(): string {
   const timestamp = Date.now().toString(36)
-  const randomPart = Math.random().toString(36).substring(2, 15)
+  // Use crypto for secure random if available, fallback to Math.random
+  let randomPart: string
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(10)
+    crypto.getRandomValues(array)
+    randomPart = Array.from(array, (b) => b.toString(36)).join('').substring(0, 15)
+  } else {
+    randomPart = Math.random().toString(36).substring(2, 15)
+  }
   return `c${timestamp}${randomPart}`
 }
 
@@ -16,6 +32,7 @@ export async function GET() {
   try {
     const history = await prisma.dJHistory.findMany({
       orderBy: { playedAt: 'desc' },
+      take: 500, // Limit to prevent memory issues
     })
 
     return NextResponse.json(history)
@@ -28,37 +45,50 @@ export async function GET() {
 // POST - Créer une nouvelle entrée d'historique
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { djName, title, artist, youtubeUrl, playedAt } = body
+    // Validate payload size
+    const validation = await validatePayloadSize(request, MAX_PAYLOAD_SIZE.default)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
+    const body = validation.body as Record<string, unknown>
+
+    // Sanitize all inputs
+    const djName = sanitizeString(body.djName, MAX_STRING_LENGTH.name)
+    const title = sanitizeString(body.title, MAX_STRING_LENGTH.name)
+    const artist = sanitizeString(body.artist, MAX_STRING_LENGTH.name)
+    const playedAt = body.playedAt
 
     // Validation
-    if (!djName?.trim()) {
+    if (!djName) {
       return NextResponse.json({ error: 'Le nom du DJ est requis' }, { status: 400 })
     }
-    if (!title?.trim()) {
+    if (!title) {
       return NextResponse.json({ error: 'Le titre est requis' }, { status: 400 })
     }
-    if (!artist?.trim()) {
+    if (!artist) {
       return NextResponse.json({ error: "L'artiste est requis" }, { status: 400 })
     }
-    if (!youtubeUrl?.trim()) {
-      return NextResponse.json({ error: 'Le lien YouTube est requis' }, { status: 400 })
+
+    // Check for injection attempts
+    if (containsInjection(djName) || containsInjection(title) || containsInjection(artist)) {
+      return NextResponse.json({ error: 'Invalid input detected' }, { status: 400 })
     }
 
-    // Validation du lien YouTube
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
-    if (!youtubeRegex.test(youtubeUrl)) {
-      return NextResponse.json({ error: 'Le lien YouTube n\'est pas valide' }, { status: 400 })
+    // Validate YouTube URL
+    const urlValidation = validateYouTubeUrl(body.youtubeUrl)
+    if (!urlValidation.valid) {
+      return NextResponse.json({ error: urlValidation.error || 'Le lien YouTube n\'est pas valide' }, { status: 400 })
     }
 
     const entry = await prisma.dJHistory.create({
       data: {
-        id: generateCuid(),
-        djName: djName.trim(),
-        title: title.trim(),
-        artist: artist.trim(),
-        youtubeUrl: youtubeUrl.trim(),
-        playedAt: playedAt ? new Date(playedAt) : new Date(),
+        id: generateSecureCuid(),
+        djName,
+        title,
+        artist,
+        youtubeUrl: urlValidation.url!,
+        playedAt: playedAt && typeof playedAt === 'string' ? new Date(playedAt) : new Date(),
       },
     })
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeString, containsInjection, MAX_STRING_LENGTH } from '@/lib/security'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -89,15 +90,28 @@ async function searchInvidious(query: string): Promise<SearchResult | null> {
 // GET - Search YouTube for a video
 export async function GET(request: NextRequest) {
   try {
-    const artist = request.nextUrl.searchParams.get('artist')
-    const title = request.nextUrl.searchParams.get('title')
-    const query = request.nextUrl.searchParams.get('q')
+    // Sanitize query parameters
+    const rawArtist = request.nextUrl.searchParams.get('artist')
+    const rawTitle = request.nextUrl.searchParams.get('title')
+    const rawQuery = request.nextUrl.searchParams.get('q')
+
+    const artist = sanitizeString(rawArtist, MAX_STRING_LENGTH.searchQuery)
+    const title = sanitizeString(rawTitle, MAX_STRING_LENGTH.searchQuery)
+    const query = sanitizeString(rawQuery, MAX_STRING_LENGTH.searchQuery)
 
     const searchQuery = query || `${artist || ''} ${title || ''}`.trim()
 
     if (!searchQuery) {
       return NextResponse.json(
         { error: 'Search query is required (provide artist+title or q parameter)' },
+        { status: 400 }
+      )
+    }
+
+    // Check for injection attempts in search query
+    if (containsInjection(searchQuery)) {
+      return NextResponse.json(
+        { error: 'Invalid search query' },
         { status: 400 }
       )
     }

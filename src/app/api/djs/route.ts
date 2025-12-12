@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getRandomColor, getRandomEmoji } from '@/lib/probability'
+import {
+  validatePayloadSize,
+  sanitizeString,
+  containsInjection,
+  MAX_PAYLOAD_SIZE,
+  MAX_STRING_LENGTH,
+} from '@/lib/security'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
@@ -28,29 +35,50 @@ export async function GET() {
 // POST - Créer un nouveau DJ
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, avatar, color, totalPlays, lastPlayedAt } = body
+    // Validate payload size
+    const validation = await validatePayloadSize(request, MAX_PAYLOAD_SIZE.tiny)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
 
-    if (!name?.trim()) {
+    const body = validation.body as Record<string, unknown>
+    const rawName = body.name
+    const rawAvatar = body.avatar
+    const rawColor = body.color
+    const totalPlays = body.totalPlays
+    const lastPlayedAt = body.lastPlayedAt
+
+    // Sanitize and validate name
+    const name = sanitizeString(rawName, MAX_STRING_LENGTH.name)
+    if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+
+    // Check for injection attempts
+    if (containsInjection(name)) {
+      return NextResponse.json({ error: 'Invalid input detected' }, { status: 400 })
     }
 
     // Vérifier si le DJ existe déjà
     const existing = await prisma.dJ.findUnique({
-      where: { name: name.trim() },
+      where: { name },
     })
 
     if (existing) {
       return NextResponse.json({ error: 'DJ already exists' }, { status: 409 })
     }
 
+    // Sanitize optional fields
+    const avatar = sanitizeString(rawAvatar, 10) // Emoji max 10 chars
+    const color = sanitizeString(rawColor, 20)   // Color code max 20 chars
+
     const dj = await prisma.dJ.create({
       data: {
-        name: name.trim(),
+        name,
         avatar: avatar || getRandomEmoji(),
         color: color || getRandomColor(),
-        totalPlays: totalPlays || 0,
-        lastPlayedAt: lastPlayedAt ? new Date(lastPlayedAt) : null,
+        totalPlays: typeof totalPlays === 'number' ? Math.max(0, Math.floor(totalPlays)) : 0,
+        lastPlayedAt: lastPlayedAt && typeof lastPlayedAt === 'string' ? new Date(lastPlayedAt) : null,
       },
     })
 
