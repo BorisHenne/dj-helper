@@ -13,6 +13,7 @@ import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse, TodaySessionResponse } from '@/types'
 import { RefreshCw, Trophy, Users, Calendar } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 
 // Import dynamique de react-confetti pour éviter les erreurs SSR
 const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
@@ -27,6 +28,8 @@ interface PendingCompletion {
 export default function HomePage() {
   const t = useTranslations()
   const locale = useLocale()
+  const searchParams = useSearchParams()
+  const mockDateParam = searchParams.get('mockDate') || ''
   const [djs, setDjs] = useState<DJWithProbability[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSpinning, setIsSpinning] = useState(false)
@@ -62,23 +65,25 @@ export default function HomePage() {
 
   const fetchTodaySession = useCallback(async () => {
     try {
-      const response = await fetch('/api/sessions/today')
+      const params = mockDateParam ? `?mockDate=${mockDateParam}` : ''
+      const response = await fetch(`/api/sessions/today${params}`)
       const data: TodaySessionResponse = await response.json()
       setTodaySession(data)
     } catch (error) {
       console.error('Failed to fetch today session:', error)
     }
-  }, [])
+  }, [mockDateParam])
 
   const fetchNextBusinessDay = useCallback(async () => {
     try {
-      const response = await fetch('/api/sessions/next')
+      const params = mockDateParam ? `?mockDate=${mockDateParam}` : ''
+      const response = await fetch(`/api/sessions/next${params}`)
       const data = await response.json()
       setNextBusinessDay(new Date(data.nextBusinessDay))
     } catch (error) {
       console.error('Failed to fetch next business day:', error)
     }
-  }, [])
+  }, [mockDateParam])
 
   useEffect(() => {
     fetchProbabilities()
