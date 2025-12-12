@@ -1,13 +1,14 @@
-import { PrismaClient } from '@prisma/client'
+import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { eq, and, sql } from 'drizzle-orm'
+import { djHistory } from '../src/db/schema'
+import { join } from 'path'
+import { createId } from '@paralleldrive/cuid2'
 
-const prisma = new PrismaClient()
-
-// Génère un CUID simple
-function generateCuid(): string {
-  const timestamp = Date.now().toString(36)
-  const randomPart = Math.random().toString(36).substring(2, 15)
-  return `c${timestamp}${randomPart}`
-}
+// Chemin vers la base de données SQLite
+const dbPath = join(__dirname, 'data', 'dj-rotation.db')
+const sqlite = new Database(dbPath)
+const db = drizzle(sqlite)
 
 // Génère une URL de recherche YouTube
 function generateYoutubeUrl(artist: string, title: string): string {
@@ -80,7 +81,8 @@ async function main() {
   console.log('🎵 Début du seeding de l\'historique DJ...')
 
   // Vérifier les entrées existantes
-  const existingCount = await prisma.dJHistory.count()
+  const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(djHistory)
+  const existingCount = countResult.count
   console.log(`📊 Entrées existantes dans la base: ${existingCount}`)
 
   let created = 0
@@ -88,12 +90,14 @@ async function main() {
 
   for (const entry of historyData) {
     // Vérifier si l'entrée existe déjà (même date et même DJ)
-    const existing = await prisma.dJHistory.findFirst({
-      where: {
-        djName: entry.dj,
-        playedAt: new Date(entry.date),
-      },
-    })
+    const playedAtDate = new Date(entry.date)
+    const [existing] = await db.select()
+      .from(djHistory)
+      .where(and(
+        eq(djHistory.djName, entry.dj),
+        eq(djHistory.playedAt, playedAtDate)
+      ))
+      .limit(1)
 
     if (existing) {
       console.log(`⏭️  Skip: ${entry.date} - ${entry.dj} (existe déjà)`)
@@ -101,25 +105,25 @@ async function main() {
       continue
     }
 
-    await prisma.dJHistory.create({
-      data: {
-        id: generateCuid(),
-        djName: entry.dj,
-        title: entry.title,
-        artist: entry.artist,
-        youtubeUrl: generateYoutubeUrl(entry.artist, entry.title),
-        playedAt: new Date(entry.date),
-      },
+    await db.insert(djHistory).values({
+      id: createId(),
+      djName: entry.dj,
+      title: entry.title,
+      artist: entry.artist,
+      youtubeUrl: generateYoutubeUrl(entry.artist, entry.title),
+      playedAt: playedAtDate,
     })
 
     console.log(`✅ Créé: ${entry.date} - ${entry.dj} - ${entry.artist} - ${entry.title}`)
     created++
   }
 
+  const [finalCount] = await db.select({ count: sql<number>`count(*)` }).from(djHistory)
+
   console.log('\n📈 Résumé:')
   console.log(`   - Entrées créées: ${created}`)
   console.log(`   - Entrées ignorées: ${skipped}`)
-  console.log(`   - Total dans la base: ${await prisma.dJHistory.count()}`)
+  console.log(`   - Total dans la base: ${finalCount.count}`)
   console.log('\n🎉 Seeding terminé!')
 }
 
@@ -128,6 +132,6 @@ main()
     console.error('❌ Erreur lors du seeding:', e)
     process.exit(1)
   })
-  .finally(async () => {
-    await prisma.$disconnect()
+  .finally(() => {
+    sqlite.close()
   })
