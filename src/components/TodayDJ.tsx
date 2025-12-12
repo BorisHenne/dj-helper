@@ -295,7 +295,7 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
 
       {/* Si on montre la prochaine session, pas de formulaire YouTube */}
       {showingNextSession && (
-        <p className="text-center text-gray-500 text-sm">
+        <p className="text-center text-gray-300 text-sm">
           {t('session.upcomingSession')}
         </p>
       )}
