@@ -160,7 +160,9 @@ body {
 /* Input styling */
 input[type="text"],
 input[type="number"],
-input[type="date"] {
+input[type="date"],
+input[type="url"],
+input[type="email"] {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
@@ -171,7 +173,9 @@ input[type="date"] {
 
 input[type="text"]:focus,
 input[type="number"]:focus,
-input[type="date"]:focus {
+input[type="date"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus {
   outline: none;
   border-color: var(--neon-pink);
   box-shadow: 0 0 10px rgba(255, 110, 199, 0.3);

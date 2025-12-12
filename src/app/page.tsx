@@ -96,27 +96,30 @@ export default function HomePage() {
 
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Colonne gauche - Roue */}
-          <div className="flex flex-col items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
-            >
-              <h2 className="text-3xl font-bold mb-2">
-                <span className="text-glow text-neon-pink">{t('home.whoWillBeDj')}</span>
-                <br />
-                <span className="text-glow text-neon-blue">{t('home.ofTheDay')}</span>
-              </h2>
-              <p className="text-gray-400">
-                {t('home.spinDescription')}
-              </p>
-            </motion.div>
+      <main className="container mx-auto px-4 py-6">
+        {/* Header avec titre */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold mb-1">
+            <span className="text-glow text-neon-pink">{t('home.whoWillBeDj')}</span>
+            {' '}
+            <span className="text-glow text-neon-blue">{t('home.ofTheDay')}</span>
+          </h2>
+          <p className="text-gray-400 text-sm">
+            {t('home.spinDescription')}
+          </p>
+        </motion.div>
 
+        {/* Layout principal - 3 colonnes sur xl, 2 sur lg, 1 sur mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* Colonne gauche - Roue */}
+          <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
             {isLoading ? (
-              <div className="flex items-center justify-center h-96">
+              <div className="flex items-center justify-center h-72">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -141,7 +144,7 @@ export default function HomePage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="mt-8 w-full max-w-md"
+                  className="mt-4 w-full max-w-sm"
                 >
                   <ConfirmButton
                     winner={winner}
@@ -150,7 +153,7 @@ export default function HomePage() {
                   />
                   <button
                     onClick={handleReset}
-                    className="mt-4 w-full py-2 text-gray-400 hover:text-white flex items-center justify-center gap-2 transition-colors"
+                    className="mt-2 w-full py-2 text-gray-400 hover:text-white flex items-center justify-center gap-2 transition-colors text-sm"
                   >
                     <RefreshCw className="w-4 h-4" />
                     {t('common.restart')}
@@ -160,21 +163,27 @@ export default function HomePage() {
             </AnimatePresence>
           </div>
 
-          {/* Colonne droite - Classement et dernière musique */}
-          <div className="space-y-6">
-            {/* Dernière musique */}
+          {/* Colonne centrale - Dernière musique */}
+          <div className="lg:col-span-7 xl:col-span-4">
             <LatestMusic />
+          </div>
 
-            {/* Probabilités */}
+          {/* Colonne droite - Probabilités (tous les DJs) */}
+          <div className="lg:col-span-12 xl:col-span-4">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass rounded-2xl p-6"
+              className="glass rounded-2xl p-4"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold flex items-center gap-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-neon-yellow" />
                   {t('home.probabilities')}
+                  {djs.length > 0 && (
+                    <span className="text-sm font-normal text-gray-400">
+                      ({djs.length} DJs)
+                    </span>
+                  )}
                 </h3>
                 <button
                   onClick={fetchProbabilities}
@@ -185,51 +194,53 @@ export default function HomePage() {
               </div>
 
               {isLoading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-20 bg-white/5 rounded-xl animate-pulse"
+                      className="h-16 bg-white/5 rounded-xl animate-pulse"
                     />
                   ))}
                 </div>
               ) : djs.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>{t('home.noDjsYet')}</p>
-                  <p className="text-sm mt-2">
+                <div className="text-center py-8 text-gray-400">
+                  <Users className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">{t('home.noDjsYet')}</p>
+                  <p className="text-xs mt-1">
                     {t('home.addParticipantsInAdmin')}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {djs.map((dj, index) => (
-                    <DJCard
-                      key={dj.id}
-                      dj={dj}
-                      rank={index}
-                      isWinner={winner?.id === dj.id}
-                    />
-                  ))}
-                </div>
-              )}
+                <>
+                  {/* Liste compacte de tous les DJs */}
+                  <div className="space-y-2 max-h-[400px] xl:max-h-[500px] overflow-y-auto pr-1">
+                    {djs.map((dj, index) => (
+                      <DJCard
+                        key={dj.id}
+                        dj={dj}
+                        rank={index}
+                        isWinner={winner?.id === dj.id}
+                        compact
+                      />
+                    ))}
+                  </div>
 
-              {/* Stats */}
-              {djs.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-neon-pink">
-                      {djs.length}
+                  {/* Stats en bas */}
+                  <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-xl font-bold text-neon-pink">
+                        {djs.length}
+                      </div>
+                      <div className="text-xs text-gray-400">{t('home.activeDjs')}</div>
                     </div>
-                    <div className="text-xs text-gray-400">{t('home.activeDjs')}</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-neon-blue">
-                      {djs.reduce((sum, dj) => sum + dj.totalPlays, 0)}
+                    <div>
+                      <div className="text-xl font-bold text-neon-blue">
+                        {djs.reduce((sum, dj) => sum + dj.totalPlays, 0)}
+                      </div>
+                      <div className="text-xs text-gray-400">{t('home.totalBlindtests')}</div>
                     </div>
-                    <div className="text-xs text-gray-400">{t('home.totalBlindtests')}</div>
                   </div>
-                </div>
+                </>
               )}
             </motion.div>
           </div>

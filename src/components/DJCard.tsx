@@ -9,9 +9,10 @@ interface DJCardProps {
   dj: DJWithProbability
   rank: number
   isWinner?: boolean
+  compact?: boolean
 }
 
-export default function DJCard({ dj, rank, isWinner }: DJCardProps) {
+export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
   const t = useTranslations()
   const locale = useLocale()
 
@@ -24,13 +25,72 @@ export default function DJCard({ dj, rank, isWinner }: DJCardProps) {
     })
   }
 
+  if (compact) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(rank * 0.05, 0.5) }}
+        className={`
+          relative rounded-lg p-2 flex items-center gap-2
+          ${isWinner ? 'winner-animation border border-neon-yellow bg-yellow-500/10' : 'bg-white/5 hover:bg-white/10'}
+          transition-all duration-200
+        `}
+      >
+        {/* Rang */}
+        <div className="flex-shrink-0 w-6 text-center">
+          {rank === 0 ? (
+            <Crown className="w-4 h-4 text-neon-yellow mx-auto" />
+          ) : (
+            <span className="text-gray-500 text-xs font-bold">#{rank + 1}</span>
+          )}
+        </div>
+
+        {/* Avatar */}
+        <div
+          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base"
+          style={{ backgroundColor: dj.color || '#ff6ec7' }}
+        >
+          {dj.avatar || '🎧'}
+        </div>
+
+        {/* Nom */}
+        <div className="flex-grow min-w-0">
+          <span className="font-medium text-sm text-white truncate block">{dj.name}</span>
+          <span className="text-xs text-gray-500">
+            {dj.totalPlays} sess. · {formatDate(dj.lastPlayedAt)}
+          </span>
+        </div>
+
+        {/* Probabilité */}
+        <div
+          className="flex-shrink-0 text-sm font-bold"
+          style={{ color: dj.color || '#ff6ec7' }}
+        >
+          {dj.probability.toFixed(1)}%
+        </div>
+
+        {/* Barre de probabilité */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800/50 rounded-b-lg overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${dj.probability}%` }}
+            transition={{ delay: Math.min(rank * 0.05, 0.5) + 0.2, duration: 0.3 }}
+            className="h-full"
+            style={{ backgroundColor: dj.color || '#ff6ec7' }}
+          />
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.1 }}
       className={`
-        glass rounded-xl p-4 flex items-center gap-4
+        relative glass rounded-xl p-4 flex items-center gap-4
         ${isWinner ? 'winner-animation border-2 border-neon-yellow' : ''}
         hover:bg-white/10 transition-all duration-300
       `}

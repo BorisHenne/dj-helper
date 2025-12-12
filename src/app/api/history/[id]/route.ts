@@ -32,7 +32,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { djName, title, artist, youtubeUrl, playedAt } = body
+    const { djName, title, artist, youtubeUrl, videoId, playedAt } = body
 
     // Vérifier que l'entrée existe
     const existing = await prisma.dJHistory.findUnique({
@@ -56,6 +56,7 @@ export async function PATCH(
     if (title !== undefined) updateData.title = title.trim()
     if (artist !== undefined) updateData.artist = artist.trim()
     if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl.trim()
+    if (videoId !== undefined) updateData.videoId = videoId
     if (playedAt !== undefined) updateData.playedAt = new Date(playedAt)
 
     const entry = await prisma.dJHistory.update({
