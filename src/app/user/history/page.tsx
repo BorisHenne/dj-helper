@@ -216,6 +216,19 @@ export default function HistoryPage() {
     return match && match[7].length === 11 ? match[7] : null
   }
 
+  // Save video ID to database
+  const saveVideoIdToDatabase = useCallback(async (entryId: string, videoId: string) => {
+    try {
+      await fetch(`/api/history/${entryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      })
+    } catch (error) {
+      console.error('Failed to save video ID to database:', error)
+    }
+  }, [])
+
   // Fetch video ID from search API based on artist and title
   const fetchVideoIdFromSearch = useCallback(async (entryId: string, artist: string, title: string) => {
     // Skip if already loading or cached
@@ -232,6 +245,8 @@ export default function HistoryPage() {
         const data = await response.json()
         if (data.videoId) {
           setVideoIdCache(prev => ({ ...prev, [entryId]: data.videoId }))
+          // Save to database for future page loads
+          saveVideoIdToDatabase(entryId, data.videoId)
         }
       }
     } catch (error) {
@@ -243,15 +258,18 @@ export default function HistoryPage() {
         return newSet
       })
     }
-  }, [loadingVideoIds, videoIdCache])
+  }, [loadingVideoIds, videoIdCache, saveVideoIdToDatabase])
 
-  // Get video ID for an entry (from URL or cache)
+  // Get video ID for an entry (from database, URL, or cache)
   const getEntryVideoId = useCallback((entry: DJHistory): string | null => {
-    // First try to extract from URL
+    // First check if videoId is stored in database
+    if (entry.videoId) return entry.videoId
+
+    // Then try to extract from URL
     const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
     if (urlVideoId) return urlVideoId
 
-    // Then check cache
+    // Finally check local cache
     return videoIdCache[entry.id] || null
   }, [videoIdCache])
 
@@ -259,6 +277,8 @@ export default function HistoryPage() {
   useEffect(() => {
     // Batch fetch video IDs for entries that need them
     const entriesToFetch = filteredHistory.filter(entry => {
+      // Skip if already has videoId in database
+      if (entry.videoId) return false
       const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
       return !urlVideoId && !videoIdCache[entry.id] && !loadingVideoIds.has(entry.id)
     })

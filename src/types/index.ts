@@ -48,6 +48,7 @@ export interface DJHistory {
   title: string
   artist: string
   youtubeUrl: string
+  videoId: string | null
   playedAt: string
   createdAt: string
   updatedAt: string
