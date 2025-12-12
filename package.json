@@ -13,6 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:migrate-dates": "tsx prisma/migrate-dates.ts",
     "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
