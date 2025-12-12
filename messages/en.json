@@ -1,0 +1,81 @@
+{
+  "common": {
+    "home": "Home",
+    "history": "History",
+    "admin": "Admin",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "search": "Search",
+    "noData": "No data",
+    "error": "Error",
+    "success": "Success"
+  },
+  "header": {
+    "title": "DJ Rotation",
+    "subtitle": "Blindtest Daily"
+  },
+  "home": {
+    "title": "Today's DJ",
+    "subtitle": "Who will host the blindtest?",
+    "spinWheel": "Spin the Wheel",
+    "spinning": "Spinning...",
+    "selectedDj": "Selected DJ",
+    "activeDjs": "Active DJs",
+    "totalBlindtests": "Total Blindtests",
+    "lastMusic": "Last Music Played",
+    "noMusicYet": "No music played yet",
+    "viewHistory": "View History"
+  },
+  "history": {
+    "title": "Music History",
+    "subtitle": "Manage the music played by DJs",
+    "entries": "entries",
+    "noEntries": "No music in the history",
+    "addMusic": "Add the music played by DJs",
+    "djName": "DJ Name",
+    "songTitle": "Song Title",
+    "artist": "Artist",
+    "youtubeUrl": "YouTube Link",
+    "playedAt": "Played On",
+    "autoFetch": "Auto",
+    "fetchingInfo": "Fetching YouTube info...",
+    "watchOnYoutube": "Watch on YouTube"
+  },
+  "admin": {
+    "title": "DJ Management",
+    "subtitle": "Manage DJs and settings",
+    "addDj": "Add DJ",
+    "editDj": "Edit DJ",
+    "djList": "DJ List",
+    "name": "Name",
+    "passages": "passages",
+    "lastPlayed": "Last played",
+    "never": "Never",
+    "daysAgo": "d ago",
+    "probability": "Probability",
+    "active": "Active",
+    "inactive": "Inactive",
+    "settings": "Settings",
+    "weightLastPlayed": "Weight: Last Played",
+    "weightTotalPlays": "Weight: Total Plays",
+    "importExport": "Import/Export",
+    "downloadTemplate": "Download Template",
+    "importFile": "Import File"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidUrl": "Invalid URL",
+    "invalidYoutubeUrl": "Invalid YouTube URL"
+  },
+  "language": {
+    "en": "English",
+    "fr": "French",
+    "switchTo": "Switch language"
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
 import { DJHistory } from '@/types'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Plus,
   Trash2,
@@ -20,6 +21,8 @@ import {
 } from 'lucide-react'
 
 export default function HistoryPage() {
+  const t = useTranslations()
+  const locale = useLocale()
   const [history, setHistory] = useState<DJHistory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -112,7 +115,7 @@ export default function HistoryPage() {
         fetchHistory()
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de l\'ajout')
+        alert(error.error || t('common.error'))
       }
     } catch (error) {
       console.error('Failed to add entry:', error)
@@ -133,7 +136,7 @@ export default function HistoryPage() {
         fetchHistory()
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de la modification')
+        alert(error.error || t('common.error'))
       }
     } catch (error) {
       console.error('Failed to update entry:', error)
@@ -141,7 +144,7 @@ export default function HistoryPage() {
   }
 
   const handleDeleteEntry = async (id: string, title: string) => {
-    if (!confirm(`Supprimer "${title}" de l'historique ?`)) return
+    if (!confirm(`${t('common.delete')} "${title}"?`)) return
 
     try {
       await fetch(`/api/history/${id}`, { method: 'DELETE' })
@@ -163,7 +166,7 @@ export default function HistoryPage() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
+    return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -187,10 +190,10 @@ export default function HistoryPage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold mb-2">
-            <span className="text-glow-sm text-neon-pink">Historique des musiques</span>
+            <span className="text-glow-sm text-neon-pink">{t('history.title')}</span>
           </h1>
           <p className="text-gray-400">
-            Gérez l'historique des musiques passées par les DJs
+            {t('history.subtitle')}
           </p>
         </motion.div>
 
@@ -203,7 +206,7 @@ export default function HistoryPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <Music className="w-5 h-5 text-neon-blue" />
-              Historique ({history.length} entrées)
+              {t('common.history')} ({history.length} {t('history.entries')})
             </h2>
 
             <div className="flex flex-wrap gap-2">
@@ -214,7 +217,7 @@ export default function HistoryPage() {
                 whileTap={{ scale: 0.95 }}
               >
                 <Plus className="w-4 h-4" />
-                Ajouter
+                {t('common.add')}
               </motion.button>
 
               <motion.button
@@ -224,7 +227,7 @@ export default function HistoryPage() {
                 whileTap={{ scale: 0.95 }}
               >
                 <RefreshCw className="w-4 h-4" />
-                Rafraîchir
+                {t('common.refresh')}
               </motion.button>
             </div>
           </div>
@@ -241,7 +244,7 @@ export default function HistoryPage() {
               >
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Nom du DJ</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.djName')}</label>
                     <input
                       type="text"
                       value={newEntry.djName}
@@ -253,7 +256,7 @@ export default function HistoryPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Titre de la musique</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
                     <input
                       type="text"
                       value={newEntry.title}
@@ -265,7 +268,7 @@ export default function HistoryPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Artiste</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
                     <input
                       type="text"
                       value={newEntry.artist}
@@ -277,7 +280,7 @@ export default function HistoryPage() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="text-sm text-gray-400 mb-1 block">Lien YouTube</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.youtubeUrl')}</label>
                     <div className="flex gap-2">
                       <input
                         type="url"
@@ -292,26 +295,26 @@ export default function HistoryPage() {
                         onClick={() => fetchYouTubeInfo(newEntry.youtubeUrl)}
                         disabled={isFetchingYouTube || !newEntry.youtubeUrl}
                         className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2"
-                        title="Récupérer titre et artiste automatiquement"
+                        title={t('history.autoFetch')}
                       >
                         {isFetchingYouTube ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Sparkles className="w-4 h-4" />
                         )}
-                        <span className="hidden sm:inline">Auto</span>
+                        <span className="hidden sm:inline">{t('history.autoFetch')}</span>
                       </button>
                     </div>
                     {isFetchingYouTube && (
                       <p className="text-xs text-purple-400 mt-1 flex items-center gap-1">
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        Récupération des infos YouTube...
+                        {t('history.fetchingInfo')}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="text-sm text-gray-400 mb-1 block">Date de passage</label>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.playedAt')}</label>
                     <input
                       type="date"
                       value={newEntry.playedAt}
@@ -328,13 +331,13 @@ export default function HistoryPage() {
                     onClick={() => setShowAddForm(false)}
                     className="px-4 py-2 text-gray-400 hover:text-white"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-green-500 rounded-lg font-bold"
                   >
-                    Ajouter
+                    {t('common.add')}
                   </button>
                 </div>
               </motion.form>
@@ -351,9 +354,9 @@ export default function HistoryPage() {
           ) : history.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="mb-2">Aucune musique dans l'historique</p>
+              <p className="mb-2">{t('history.noEntries')}</p>
               <p className="text-sm">
-                Ajoutez les musiques passées par les DJs
+                {t('history.addMusic')}
               </p>
             </div>
           ) : (
@@ -378,7 +381,7 @@ export default function HistoryPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Titre</label>
+                          <label className="text-xs text-gray-500">{t('history.songTitle')}</label>
                           <input
                             type="text"
                             value={editEntry.title || ''}
@@ -387,7 +390,7 @@ export default function HistoryPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Artiste</label>
+                          <label className="text-xs text-gray-500">{t('history.artist')}</label>
                           <input
                             type="text"
                             value={editEntry.artist || ''}
@@ -396,7 +399,7 @@ export default function HistoryPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Date</label>
+                          <label className="text-xs text-gray-500">{t('history.playedAt')}</label>
                           <input
                             type="date"
                             value={editEntry.playedAt?.split('T')[0] || ''}
@@ -406,7 +409,7 @@ export default function HistoryPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Lien YouTube</label>
+                        <label className="text-xs text-gray-500">{t('history.youtubeUrl')}</label>
                         <input
                           type="url"
                           value={editEntry.youtubeUrl || ''}
@@ -420,14 +423,14 @@ export default function HistoryPage() {
                           className="p-2 text-green-500 hover:bg-green-500/20 rounded-lg flex items-center gap-1"
                         >
                           <Save className="w-4 h-4" />
-                          <span className="text-sm">Sauvegarder</span>
+                          <span className="text-sm">{t('common.save')}</span>
                         </button>
                         <button
                           onClick={() => { setEditingId(null); setEditEntry({}); }}
                           className="p-2 text-gray-400 hover:bg-white/10 rounded-lg flex items-center gap-1"
                         >
                           <X className="w-4 h-4" />
-                          <span className="text-sm">Annuler</span>
+                          <span className="text-sm">{t('common.cancel')}</span>
                         </button>
                       </div>
                     </div>
@@ -482,21 +485,21 @@ export default function HistoryPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg"
-                          title="Voir sur YouTube"
+                          title={t('history.watchOnYoutube')}
                         >
                           <Youtube className="w-5 h-5" />
                         </a>
                         <button
                           onClick={() => startEdit(entry)}
                           className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
-                          title="Modifier"
+                          title={t('common.edit')}
                         >
                           <Edit3 className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteEntry(entry.id, entry.title)}
                           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg"
-                          title="Supprimer"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
