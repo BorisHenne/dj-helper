@@ -12,11 +12,27 @@ export async function GET() {
       where: { isActive: true },
     })
 
+    // Count history entries for each DJ by name
+    const historyCounts = await prisma.dJHistory.groupBy({
+      by: ['djName'],
+      _count: { djName: true },
+    })
+
+    const historyCountMap = new Map(
+      historyCounts.map(h => [h.djName, h._count.djName])
+    )
+
+    // Override totalPlays with history count
+    const djsWithHistoryCount = djs.map(dj => ({
+      ...dj,
+      totalPlays: historyCountMap.get(dj.name) || 0,
+    }))
+
     const settings = await prisma.settings.findUnique({
       where: { id: 'default' },
     })
 
-    const djsWithProbability = calculateProbabilities(djs, {
+    const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
       weightLastPlayed: settings?.weightLastPlayed ?? 0.6,
       weightTotalPlays: settings?.weightTotalPlays ?? 0.4,
     })
@@ -41,11 +57,27 @@ export async function POST() {
       where: { isActive: true },
     })
 
+    // Count history entries for each DJ by name
+    const historyCounts = await prisma.dJHistory.groupBy({
+      by: ['djName'],
+      _count: { djName: true },
+    })
+
+    const historyCountMap = new Map(
+      historyCounts.map(h => [h.djName, h._count.djName])
+    )
+
+    // Override totalPlays with history count
+    const djsWithHistoryCount = djs.map(dj => ({
+      ...dj,
+      totalPlays: historyCountMap.get(dj.name) || 0,
+    }))
+
     const settings = await prisma.settings.findUnique({
       where: { id: 'default' },
     })
 
-    const djsWithProbability = calculateProbabilities(djs, {
+    const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
       weightLastPlayed: settings?.weightLastPlayed ?? 0.6,
       weightTotalPlays: settings?.weightTotalPlays ?? 0.4,
     })
