@@ -1,14 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getTodayMidnight, isBusinessDay } from '@/lib/dates'
+import { getTodayMidnight, isBusinessDay, parseDateISO } from '@/lib/dates'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
 
 // GET - Récupère la session d'aujourd'hui (si c'est un jour ouvrable)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const today = getTodayMidnight()
+    // Support mock date for testing
+    const mockDateParam = request.nextUrl.searchParams.get('mockDate')
+    const today = mockDateParam ? parseDateISO(mockDateParam) : getTodayMidnight()
 
     // Si ce n'est pas un jour ouvrable, retourner null
     if (!isBusinessDay(today)) {

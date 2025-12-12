@@ -2,6 +2,24 @@
  * Utilitaires pour la gestion des dates et jours ouvrables
  */
 
+// Variable globale pour le mode debug
+let mockDate: Date | null = null
+
+/**
+ * Définit une date simulée pour les tests (mode debug)
+ * Utiliser setMockDate(null) pour désactiver
+ */
+export function setMockDate(date: Date | null): void {
+  mockDate = date
+}
+
+/**
+ * Retourne la date simulée si définie, sinon null
+ */
+export function getMockDate(): Date | null {
+  return mockDate
+}
+
 /**
  * Vérifie si une date est un jour ouvrable (lundi à vendredi)
  */
@@ -31,12 +49,22 @@ export function getNextBusinessDay(fromDate: Date = new Date(), skipToday: boole
 }
 
 /**
- * Retourne la date d'aujourd'hui à minuit
+ * Retourne la date d'aujourd'hui à minuit (ou la date simulée en mode debug)
  */
 export function getTodayMidnight(): Date {
-  const today = new Date()
+  const today = mockDate ? new Date(mockDate) : new Date()
   today.setHours(0, 0, 0, 0)
   return today
+}
+
+/**
+ * Retourne l'heure actuelle (ou 9h en mode debug pour simuler le matin)
+ */
+export function getCurrentHour(): number {
+  if (mockDate) {
+    return 9 // Simuler le matin en mode debug
+  }
+  return new Date().getHours()
 }
 
 /**
