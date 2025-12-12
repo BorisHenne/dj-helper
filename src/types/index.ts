@@ -53,3 +53,33 @@ export interface DJHistory {
   createdAt: string
   updatedAt: string
 }
+
+export type DailySessionStatus = 'pending' | 'completed' | 'skipped'
+
+export interface DailySession {
+  id: string
+  date: string
+  djId: string | null
+  djName: string
+  status: DailySessionStatus
+  youtubeUrl: string | null
+  videoId: string | null
+  title: string | null
+  artist: string | null
+  skipReason: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TodaySessionResponse {
+  session: DailySession | null
+  isBusinessDay: boolean
+  date?: string
+  message?: string
+}
+
+export interface NextSessionResponse {
+  session: DailySession | null
+  isToday: boolean
+  nextBusinessDay: string
+}

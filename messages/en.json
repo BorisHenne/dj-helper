@@ -23,7 +23,8 @@
     "color": "Color",
     "passages": "sessions",
     "daysAgo": "d ago",
-    "never": "Never"
+    "never": "Never",
+    "optional": "optional"
   },
   "header": {
     "title": "DJ Rotation",
@@ -128,5 +129,33 @@
     "iosStep1": "Tap the Share button",
     "iosStep2": "Select \"Add to Home Screen\"",
     "offline": "You're offline"
+  },
+  "session": {
+    "todayDj": "Today's DJ",
+    "nextSession": "Next session",
+    "noSessionToday": "No session scheduled for today",
+    "selectNextDj": "Use the wheel to select the next DJ",
+    "useWheelToSelect": "Use the wheel to select a DJ",
+    "weekend": "No session on weekends",
+    "cancelled": "Cancelled",
+    "completed": "Blindtest completed",
+    "dailyCancelled": "Daily cancelled",
+    "addYoutubeLink": "Add the blindtest YouTube link",
+    "submitLink": "Submit link",
+    "linkAdded": "Link added successfully!",
+    "viewBlindtest": "View blindtest",
+    "selectDjFor": "Select DJ for",
+    "spinForNextDay": "Spin the wheel to choose the DJ for the next business day",
+    "today": "today",
+    "noNextSession": "No session scheduled",
+    "sessionSkipped": "The last session was cancelled",
+    "nextBusinessDay": "Next business day",
+    "selectWithWheel": "Select with the wheel",
+    "editNextDj": "Edit DJ",
+    "selectDj": "Select a DJ",
+    "skipSession": "Cancel session",
+    "skipConfirm": "Are you sure you want to cancel this session? The DJ can be selected for the next business day.",
+    "skipReason": "Cancellation reason",
+    "skip": "Cancel"
   }
 }
