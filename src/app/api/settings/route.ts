@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering (database access)
+export const dynamic = 'force-dynamic'
+
 // GET - Récupère les settings
 export async function GET() {
   try {

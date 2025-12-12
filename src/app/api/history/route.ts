@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering (database access)
+export const dynamic = 'force-dynamic'
+
 // Génère un CUID simple
 function generateCuid(): string {
   const timestamp = Date.now().toString(36)

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getRandomColor, getRandomEmoji } from '@/lib/probability'
 
+// Force dynamic rendering (database access)
+export const dynamic = 'force-dynamic'
+
 // GET - Liste tous les DJs
 export async function GET() {
   try {

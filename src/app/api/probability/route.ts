@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateProbabilities, selectDJByProbability } from '@/lib/probability'
 
+// Force dynamic rendering (database access)
+export const dynamic = 'force-dynamic'
+
 // GET - Calcule les probabilités pour tous les DJs actifs
 export async function GET() {
   try {
