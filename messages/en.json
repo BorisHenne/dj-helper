@@ -45,7 +45,8 @@
     "playedAt": "Played On",
     "autoFetch": "Auto",
     "fetchingInfo": "Fetching YouTube info...",
-    "watchOnYoutube": "Watch on YouTube"
+    "watchOnYoutube": "Watch on YouTube",
+    "play": "Play"
   },
   "admin": {
     "title": "DJ Management",

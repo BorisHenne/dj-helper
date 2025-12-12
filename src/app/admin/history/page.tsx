@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
-import { DJHistory } from '@/types'
+import YouTubePlayer, { PlayButton } from '@/components/YouTubePlayer'
+import { DJHistory, DJ } from '@/types'
 import { useTranslations, useLocale } from 'next-intl'
 import {
   Plus,
@@ -17,17 +18,34 @@ import {
   Loader2,
   Sparkles,
   ExternalLink,
+  Play,
+  Search,
+  ChevronDown,
 } from 'lucide-react'
 
 export default function HistoryPage() {
   const t = useTranslations()
   const locale = useLocale()
   const [history, setHistory] = useState<DJHistory[]>([])
+  const [djs, setDjs] = useState<DJ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [isFetchingYouTube, setIsFetchingYouTube] = useState(false)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [playerOpen, setPlayerOpen] = useState(false)
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Filtered history based on search
+  const filteredHistory = history.filter(entry => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      entry.djName.toLowerCase().includes(query) ||
+      entry.artist.toLowerCase().includes(query) ||
+      entry.title.toLowerCase().includes(query)
+    )
+  })
 
   // Form states
   const [newEntry, setNewEntry] = useState({
@@ -83,9 +101,28 @@ export default function HistoryPage() {
     }
   }, [])
 
+  const fetchDjs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/djs')
+      const data = await response.json()
+      setDjs(data.filter((dj: DJ) => dj.isActive))
+    } catch (error) {
+      console.error('Failed to fetch DJs:', error)
+    }
+  }, [])
+
+  // Open YouTube search in new tab
+  const searchYouTube = () => {
+    if (newEntry.artist || newEntry.title) {
+      const query = `${newEntry.artist} ${newEntry.title}`.trim()
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank')
+    }
+  }
+
   useEffect(() => {
     fetchHistory()
-  }, [fetchHistory])
+    fetchDjs()
+  }, [fetchHistory, fetchDjs])
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -176,9 +213,50 @@ export default function HistoryPage() {
     return match && match[7].length === 11 ? match[7] : null
   }
 
+  // Player functions
+  const playVideo = (index: number) => {
+    setCurrentPlayingIndex(index)
+    setPlayerOpen(true)
+  }
+
+  const playNext = () => {
+    if (currentPlayingIndex < filteredHistory.length - 1) {
+      setCurrentPlayingIndex(currentPlayingIndex + 1)
+    }
+  }
+
+  const playPrevious = () => {
+    if (currentPlayingIndex > 0) {
+      setCurrentPlayingIndex(currentPlayingIndex - 1)
+    }
+  }
+
+  const closePlayer = () => {
+    setPlayerOpen(false)
+    setCurrentPlayingIndex(-1)
+  }
+
+  const currentVideo = currentPlayingIndex >= 0 ? filteredHistory[currentPlayingIndex] : null
+  const currentVideoId = currentVideo ? getYoutubeVideoId(currentVideo.youtubeUrl) : null
+
   return (
     <div className="min-h-screen">
       <Header />
+
+      {/* YouTube Player Modal */}
+      {currentVideoId && currentVideo && (
+        <YouTubePlayer
+          videoId={currentVideoId}
+          title={currentVideo.title}
+          artist={currentVideo.artist}
+          isOpen={playerOpen}
+          onClose={closePlayer}
+          onNext={playNext}
+          onPrevious={playPrevious}
+          hasNext={currentPlayingIndex < filteredHistory.length - 1}
+          hasPrevious={currentPlayingIndex > 0}
+        />
+      )}
 
       <main className="container mx-auto px-4 py-8">
         <motion.div
@@ -229,6 +307,33 @@ export default function HistoryPage() {
             </div>
           </div>
 
+          {/* Search bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`${t('common.search')} DJ, ${t('history.artist').toLowerCase()}, ${t('history.songTitle').toLowerCase()}...`}
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-neon-blue focus:outline-none transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-gray-400 mt-2">
+                {filteredHistory.length} {t('history.entries')} {locale === 'fr' ? 'trouvées' : 'found'}
+              </p>
+            )}
+          </div>
+
           {/* Formulaire d'ajout */}
           <AnimatePresence>
             {showAddForm && (
@@ -240,42 +345,28 @@ export default function HistoryPage() {
                 className="mb-6 p-4 bg-white/5 rounded-xl"
               >
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* DJ Dropdown */}
                   <div>
                     <label className="text-sm text-gray-400 mb-1 block">{t('history.djName')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.djName}
-                      onChange={(e) => setNewEntry({ ...newEntry, djName: e.target.value })}
-                      placeholder="Ex: DJ Max"
-                      className="w-full"
-                      required
-                    />
+                    <div className="relative">
+                      <select
+                        value={newEntry.djName}
+                        onChange={(e) => setNewEntry({ ...newEntry, djName: e.target.value })}
+                        className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 focus:border-neon-blue focus:outline-none"
+                        required
+                      >
+                        <option value="" className="bg-gray-900">{locale === 'fr' ? 'Sélectionner un DJ' : 'Select a DJ'}</option>
+                        {djs.map(dj => (
+                          <option key={dj.id} value={dj.name} className="bg-gray-900">
+                            {dj.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.title}
-                      onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                      placeholder="Ex: Bohemian Rhapsody"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
-                    <input
-                      type="text"
-                      value={newEntry.artist}
-                      onChange={(e) => setNewEntry({ ...newEntry, artist: e.target.value })}
-                      placeholder="Ex: Queen"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-
+                  {/* YouTube URL - First so auto-fill can populate other fields */}
                   <div className="sm:col-span-2">
                     <label className="text-sm text-gray-400 mb-1 block">{t('history.youtubeUrl')}</label>
                     <div className="flex gap-2">
@@ -308,6 +399,46 @@ export default function HistoryPage() {
                         {t('history.fetchingInfo')}
                       </p>
                     )}
+                  </div>
+
+                  {/* Artist */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.artist}
+                      onChange={(e) => setNewEntry({ ...newEntry, artist: e.target.value })}
+                      placeholder="Ex: Queen"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Song Title */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.title}
+                      onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                      placeholder="Ex: Bohemian Rhapsody"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Search YouTube button */}
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={searchYouTube}
+                      disabled={!newEntry.artist && !newEntry.title}
+                      className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                      title={locale === 'fr' ? 'Rechercher sur YouTube' : 'Search on YouTube'}
+                    >
+                      <Youtube className="w-4 h-4" />
+                      <span>{locale === 'fr' ? 'Rechercher' : 'Search'}</span>
+                    </button>
                   </div>
 
                   <div>
@@ -348,17 +479,20 @@ export default function HistoryPage() {
                 <div key={i} className="h-12 bg-white/5 rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : history.length === 0 ? (
+          ) : filteredHistory.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="mb-2">{t('history.noEntries')}</p>
-              <p className="text-sm">{t('history.addMusic')}</p>
+              <p className="mb-2">{searchQuery ? (locale === 'fr' ? 'Aucun résultat' : 'No results') : t('history.noEntries')}</p>
+              <p className="text-sm">{searchQuery ? (locale === 'fr' ? 'Essayez une autre recherche' : 'Try another search') : t('history.addMusic')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
+                    <th className="text-left py-3 px-2 text-gray-400 font-medium text-sm w-20">
+
+                    </th>
                     <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
                       {t('history.playedAt')}
                     </th>
@@ -371,22 +505,21 @@ export default function HistoryPage() {
                     <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
                       {t('history.songTitle')}
                     </th>
-                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm w-24">
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm w-32">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {history.map((entry) => (
+                  {filteredHistory.map((entry, index) => (
                     <tr
                       key={entry.id}
-                      className="border-b border-white/5 hover:bg-white/5 transition-colors relative group"
-                      onMouseEnter={() => setHoveredId(entry.id)}
-                      onMouseLeave={() => setHoveredId(null)}
+                      className="border-b border-white/5 hover:bg-white/5 transition-colors"
                     >
                       {editingId === entry.id ? (
                         // Mode édition
                         <>
+                          <td className="py-2 px-2"></td>
                           <td className="py-2 px-4">
                             <input
                               type="date"
@@ -441,6 +574,28 @@ export default function HistoryPage() {
                       ) : (
                         // Mode affichage
                         <>
+                          {/* Thumbnail */}
+                          <td className="py-2 px-2">
+                            {getYoutubeVideoId(entry.youtubeUrl) ? (
+                              <button
+                                onClick={() => playVideo(index)}
+                                className="relative group/thumb block w-16 h-10 rounded overflow-hidden bg-black"
+                              >
+                                <img
+                                  src={`https://img.youtube.com/vi/${getYoutubeVideoId(entry.youtubeUrl)}/default.jpg`}
+                                  alt={entry.title}
+                                  className="w-full h-full object-cover opacity-80 group-hover/thumb:opacity-100 transition-opacity"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/thumb:bg-black/10 transition-colors">
+                                  <Play className="w-4 h-4 text-white" />
+                                </div>
+                              </button>
+                            ) : (
+                              <div className="w-16 h-10 rounded bg-white/5 flex items-center justify-center">
+                                <Music className="w-4 h-4 text-gray-500" />
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 px-4 text-sm text-gray-300">
                             {formatDate(entry.playedAt)}
                           </td>
@@ -463,6 +618,13 @@ export default function HistoryPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => playVideo(index)}
+                                className="p-1.5 text-green-500 hover:bg-green-500/20 rounded transition-colors"
+                                title={t('history.play')}
+                              >
+                                <Play className="w-4 h-4" />
+                              </button>
                               <a
                                 href={entry.youtubeUrl}
                                 target="_blank"
@@ -489,27 +651,6 @@ export default function HistoryPage() {
                             </div>
                           </td>
                         </>
-                      )}
-
-                      {/* YouTube Preview on Hover */}
-                      {hoveredId === entry.id && editingId !== entry.id && getYoutubeVideoId(entry.youtubeUrl) && (
-                        <td className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50" colSpan={5}>
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            className="bg-gray-900 rounded-xl shadow-2xl border border-white/10 overflow-hidden"
-                          >
-                            <img
-                              src={`https://img.youtube.com/vi/${getYoutubeVideoId(entry.youtubeUrl)}/mqdefault.jpg`}
-                              alt={entry.title}
-                              className="w-64 h-36 object-cover"
-                            />
-                            <div className="p-3 max-w-64">
-                              <p className="font-medium text-sm truncate">{entry.title}</p>
-                              <p className="text-xs text-gray-400 truncate">{entry.artist}</p>
-                            </div>
-                          </motion.div>
-                        </td>
                       )}
                     </tr>
                   ))}

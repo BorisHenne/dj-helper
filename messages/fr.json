@@ -45,7 +45,8 @@
     "playedAt": "Date de passage",
     "autoFetch": "Auto",
     "fetchingInfo": "Récupération des infos YouTube...",
-    "watchOnYoutube": "Voir sur YouTube"
+    "watchOnYoutube": "Voir sur YouTube",
+    "play": "Lire"
   },
   "admin": {
     "title": "Gestion des DJs",

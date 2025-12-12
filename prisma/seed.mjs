@@ -26,16 +26,24 @@ function generateId() {
 async function main() {
   console.log('🎵 Seeding database...\n')
 
-  // Seed DJs
+  // Seed DJs (only create if doesn't exist - never overwrite user data)
   console.log('📀 Seeding DJs...')
+  let djCreated = 0
+  let djSkipped = 0
+
   for (const dj of defaultDJs) {
-    await prisma.dJ.upsert({
-      where: { name: dj.name },
-      update: {
-        totalPlays: dj.totalPlays,
-        lastPlayedAt: new Date(dj.lastPlayedAt),
-      },
-      create: {
+    const existing = await prisma.dJ.findUnique({
+      where: { name: dj.name }
+    })
+
+    if (existing) {
+      djSkipped++
+      console.log(`  ⏭ ${dj.name}: already exists (skipped)`)
+      continue
+    }
+
+    await prisma.dJ.create({
+      data: {
         name: dj.name,
         avatar: dj.avatar,
         color: dj.color,
@@ -44,9 +52,10 @@ async function main() {
         isActive: true,
       },
     })
-    console.log(`  ✓ ${dj.name}: ${dj.totalPlays} passages`)
+    console.log(`  ✓ ${dj.name}: created with ${dj.totalPlays} passages`)
+    djCreated++
   }
-  console.log(`\n✅ ${defaultDJs.length} DJs seeded!\n`)
+  console.log(`\n✅ DJs: ${djCreated} created, ${djSkipped} skipped (already exist)\n`)
 
   // Seed History
   console.log('🎶 Seeding history...')
