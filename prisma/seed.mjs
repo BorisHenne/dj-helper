@@ -8,12 +8,12 @@ const prisma = new PrismaClient()
 
 // Load default DJs from JSON file
 const defaultDJs = JSON.parse(
-  readFileSync(join(__dirname, 'data', 'default-djs.json'), 'utf-8')
+  readFileSync(join(__dirname, 'seed-data', 'default-djs.json'), 'utf-8')
 )
 
 // Load default history from JSON file
 const defaultHistory = JSON.parse(
-  readFileSync(join(__dirname, 'data', 'default-history.json'), 'utf-8')
+  readFileSync(join(__dirname, 'seed-data', 'default-history.json'), 'utf-8')
 )
 
 // Generate a simple unique ID
