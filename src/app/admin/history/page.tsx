@@ -15,6 +15,8 @@ import {
   Youtube,
   User,
   RefreshCw,
+  Loader2,
+  Sparkles,
 } from 'lucide-react'
 
 export default function HistoryPage() {
@@ -22,6 +24,7 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [isFetchingYouTube, setIsFetchingYouTube] = useState(false)
 
   // Form states
   const [newEntry, setNewEntry] = useState({
@@ -32,6 +35,41 @@ export default function HistoryPage() {
     playedAt: new Date().toISOString().split('T')[0],
   })
   const [editEntry, setEditEntry] = useState<Partial<DJHistory>>({})
+
+  // Fetch YouTube info and auto-fill title/artist
+  const fetchYouTubeInfo = async (url: string) => {
+    if (!url || isFetchingYouTube) return
+
+    // Validate YouTube URL
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
+    if (!youtubeRegex.test(url)) return
+
+    setIsFetchingYouTube(true)
+    try {
+      const response = await fetch(`/api/youtube?url=${encodeURIComponent(url)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setNewEntry(prev => ({
+          ...prev,
+          title: data.title || prev.title,
+          artist: data.artist || prev.artist,
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch YouTube info:', error)
+    } finally {
+      setIsFetchingYouTube(false)
+    }
+  }
+
+  // Handle YouTube URL change with auto-fetch
+  const handleYouTubeUrlChange = (url: string) => {
+    setNewEntry(prev => ({ ...prev, youtubeUrl: url }))
+    // Auto-fetch when URL looks complete
+    if (url.includes('youtube.com/watch?v=') || url.includes('youtu.be/')) {
+      fetchYouTubeInfo(url)
+    }
+  }
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -240,14 +278,36 @@ export default function HistoryPage() {
 
                   <div className="sm:col-span-2">
                     <label className="text-sm text-gray-400 mb-1 block">Lien YouTube</label>
-                    <input
-                      type="url"
-                      value={newEntry.youtubeUrl}
-                      onChange={(e) => setNewEntry({ ...newEntry, youtubeUrl: e.target.value })}
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      className="w-full"
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={newEntry.youtubeUrl}
+                        onChange={(e) => handleYouTubeUrlChange(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="flex-1"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fetchYouTubeInfo(newEntry.youtubeUrl)}
+                        disabled={isFetchingYouTube || !newEntry.youtubeUrl}
+                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2"
+                        title="Récupérer titre et artiste automatiquement"
+                      >
+                        {isFetchingYouTube ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        <span className="hidden sm:inline">Auto</span>
+                      </button>
+                    </div>
+                    {isFetchingYouTube && (
+                      <p className="text-xs text-purple-400 mt-1 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Récupération des infos YouTube...
+                      </p>
+                    )}
                   </div>
 
                   <div>
