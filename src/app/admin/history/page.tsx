@@ -12,12 +12,11 @@ import {
   Save,
   X,
   Music,
-  Calendar,
   Youtube,
-  User,
   RefreshCw,
   Loader2,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react'
 
 export default function HistoryPage() {
@@ -28,6 +27,7 @@ export default function HistoryPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [isFetchingYouTube, setIsFetchingYouTube] = useState(false)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   // Form states
   const [newEntry, setNewEntry] = useState({
@@ -43,7 +43,6 @@ export default function HistoryPage() {
   const fetchYouTubeInfo = async (url: string) => {
     if (!url || isFetchingYouTube) return
 
-    // Validate YouTube URL
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
     if (!youtubeRegex.test(url)) return
 
@@ -65,10 +64,8 @@ export default function HistoryPage() {
     }
   }
 
-  // Handle YouTube URL change with auto-fetch
   const handleYouTubeUrlChange = (url: string) => {
     setNewEntry(prev => ({ ...prev, youtubeUrl: url }))
-    // Auto-fetch when URL looks complete
     if (url.includes('youtube.com/watch?v=') || url.includes('youtu.be/')) {
       fetchYouTubeInfo(url)
     }
@@ -167,8 +164,8 @@ export default function HistoryPage() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-      day: 'numeric',
-      month: 'long',
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
     })
   }
@@ -344,170 +341,180 @@ export default function HistoryPage() {
             )}
           </AnimatePresence>
 
-          {/* Liste de l'historique */}
+          {/* Table de l'historique */}
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-white/5 rounded-xl animate-pulse" />
+                <div key={i} className="h-12 bg-white/5 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : history.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="mb-2">{t('history.noEntries')}</p>
-              <p className="text-sm">
-                {t('history.addMusic')}
-              </p>
+              <p className="text-sm">{t('history.addMusic')}</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {history.map((entry) => (
-                <motion.div
-                  key={entry.id}
-                  layout
-                  className="p-4 rounded-xl bg-white/5"
-                >
-                  {editingId === entry.id ? (
-                    // Mode édition
-                    <div className="space-y-3">
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-500">DJ</label>
-                          <input
-                            type="text"
-                            value={editEntry.djName || ''}
-                            onChange={(e) => setEditEntry({ ...editEntry, djName: e.target.value })}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500">{t('history.songTitle')}</label>
-                          <input
-                            type="text"
-                            value={editEntry.title || ''}
-                            onChange={(e) => setEditEntry({ ...editEntry, title: e.target.value })}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500">{t('history.artist')}</label>
-                          <input
-                            type="text"
-                            value={editEntry.artist || ''}
-                            onChange={(e) => setEditEntry({ ...editEntry, artist: e.target.value })}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500">{t('history.playedAt')}</label>
-                          <input
-                            type="date"
-                            value={editEntry.playedAt?.split('T')[0] || ''}
-                            onChange={(e) => setEditEntry({ ...editEntry, playedAt: e.target.value })}
-                            className="w-full text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">{t('history.youtubeUrl')}</label>
-                        <input
-                          type="url"
-                          value={editEntry.youtubeUrl || ''}
-                          onChange={(e) => setEditEntry({ ...editEntry, youtubeUrl: e.target.value })}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleUpdateEntry(entry.id)}
-                          className="p-2 text-green-500 hover:bg-green-500/20 rounded-lg flex items-center gap-1"
-                        >
-                          <Save className="w-4 h-4" />
-                          <span className="text-sm">{t('common.save')}</span>
-                        </button>
-                        <button
-                          onClick={() => { setEditingId(null); setEditEntry({}); }}
-                          className="p-2 text-gray-400 hover:bg-white/10 rounded-lg flex items-center gap-1"
-                        >
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">{t('common.cancel')}</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Mode affichage
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Thumbnail YouTube */}
-                      <div className="flex-shrink-0">
-                        {getYoutubeVideoId(entry.youtubeUrl) ? (
-                          <a
-                            href={entry.youtubeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block relative group"
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.playedAt')}
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      DJ
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.artist')}
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.songTitle')}
+                    </th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm w-24">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((entry) => (
+                    <tr
+                      key={entry.id}
+                      className="border-b border-white/5 hover:bg-white/5 transition-colors relative group"
+                      onMouseEnter={() => setHoveredId(entry.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+                      {editingId === entry.id ? (
+                        // Mode édition
+                        <>
+                          <td className="py-2 px-4">
+                            <input
+                              type="date"
+                              value={editEntry.playedAt?.split('T')[0] || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, playedAt: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editEntry.djName || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, djName: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editEntry.artist || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, artist: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editEntry.title || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, title: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleUpdateEntry(entry.id)}
+                                className="p-1.5 text-green-500 hover:bg-green-500/20 rounded"
+                                title={t('common.save')}
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => { setEditingId(null); setEditEntry({}); }}
+                                className="p-1.5 text-gray-400 hover:bg-white/10 rounded"
+                                title={t('common.cancel')}
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        // Mode affichage
+                        <>
+                          <td className="py-3 px-4 text-sm text-gray-300">
+                            {formatDate(entry.playedAt)}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">
+                            {entry.djName}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-neon-pink">
+                            {entry.artist}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            <a
+                              href={entry.youtubeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-neon-blue transition-colors flex items-center gap-1"
+                            >
+                              {entry.title}
+                              <ExternalLink className="w-3 h-3 opacity-50" />
+                            </a>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <a
+                                href={entry.youtubeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
+                                title={t('history.watchOnYoutube')}
+                              >
+                                <Youtube className="w-4 h-4" />
+                              </a>
+                              <button
+                                onClick={() => startEdit(entry)}
+                                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded"
+                                title={t('common.edit')}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEntry(entry.id, entry.title)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      )}
+
+                      {/* YouTube Preview on Hover */}
+                      {hoveredId === entry.id && editingId !== entry.id && getYoutubeVideoId(entry.youtubeUrl) && (
+                        <td className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50" colSpan={5}>
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            className="bg-gray-900 rounded-xl shadow-2xl border border-white/10 overflow-hidden"
                           >
                             <img
                               src={`https://img.youtube.com/vi/${getYoutubeVideoId(entry.youtubeUrl)}/mqdefault.jpg`}
                               alt={entry.title}
-                              className="w-40 h-24 object-cover rounded-lg"
+                              className="w-64 h-36 object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                              <Youtube className="w-10 h-10 text-red-500" />
+                            <div className="p-3 max-w-64">
+                              <p className="font-medium text-sm truncate">{entry.title}</p>
+                              <p className="text-xs text-gray-400 truncate">{entry.artist}</p>
                             </div>
-                          </a>
-                        ) : (
-                          <div className="w-40 h-24 bg-white/10 rounded-lg flex items-center justify-center">
-                            <Music className="w-8 h-8 text-gray-500" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Infos */}
-                      <div className="flex-grow min-w-0">
-                        <h3 className="font-bold text-lg truncate">{entry.title}</h3>
-                        <p className="text-neon-pink truncate">{entry.artist}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            {entry.djName}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(entry.playedAt)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-start gap-1 flex-shrink-0">
-                        <a
-                          href={entry.youtubeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg"
-                          title={t('history.watchOnYoutube')}
-                        >
-                          <Youtube className="w-5 h-5" />
-                        </a>
-                        <button
-                          onClick={() => startEdit(entry)}
-                          className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
-                          title={t('common.edit')}
-                        >
-                          <Edit3 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEntry(entry.id, entry.title)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                          </motion.div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </motion.div>
