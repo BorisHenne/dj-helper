@@ -11,6 +11,36 @@ const dbPath = join(__dirname, 'data', 'dj-rotation.db')
 const sqlite = new Database(dbPath)
 const db = drizzle(sqlite)
 
+// Configuration
+const FETCH_VIDEO_IDS = process.env.FETCH_VIDEOS !== 'false' // Set FETCH_VIDEOS=false to skip
+const DELAY_MS = 2000 // 2 seconds between YouTube searches
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// Search YouTube for video ID using ytsr
+async function searchYouTubeVideoId(artist: string, title: string): Promise<string | null> {
+  try {
+    const ytsr = (await import('ytsr')).default
+    const query = `${artist} ${title}`.trim()
+
+    const searchResults = await ytsr(query, {
+      limit: 5,
+      safeSearch: false,
+    }) as { items: Array<{ type: string; id: string; title: string }> }
+
+    const video = searchResults.items.find(item => item.type === 'video')
+    if (video) {
+      return video.id
+    }
+    return null
+  } catch (error) {
+    // Silently fail - network might not be available
+    return null
+  }
+}
+
 // Load default DJs from JSON file
 const defaultDJs = JSON.parse(
   readFileSync(join(__dirname, 'seed-data', 'default-djs.json'), 'utf-8')
@@ -73,6 +103,9 @@ async function main() {
 
   // Seed History
   console.log('🎶 Seeding history...')
+  if (FETCH_VIDEO_IDS) {
+    console.log('   (Fetching YouTube video IDs - this may take a while...)\n')
+  }
 
   // Check existing entries to avoid duplicates
   const existingHistory = await db.select({
@@ -105,8 +138,10 @@ async function main() {
 
   let created = 0
   let skipped = 0
+  let videosFound = 0
 
-  for (const entry of defaultHistory) {
+  for (let i = 0; i < defaultHistory.length; i++) {
+    const entry = defaultHistory[i]
     const key = `${entry.djName}-${entry.title}-${entry.date}`
 
     if (existingKeys.has(key)) {
@@ -114,10 +149,32 @@ async function main() {
       continue
     }
 
-    // Generate YouTube URL from videoId if available, otherwise use search URL
-    const youtubeUrl = entry.videoId
-      ? `https://www.youtube.com/watch?v=${entry.videoId}`
-      : entry.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`
+    let videoId = entry.videoId || null
+    let youtubeUrl = entry.youtubeUrl
+
+    // Try to fetch video ID if not provided and fetching is enabled
+    if (!videoId && FETCH_VIDEO_IDS) {
+      process.stdout.write(`  [${i + 1}/${defaultHistory.length}] ${entry.artist} - ${entry.title}... `)
+      videoId = await searchYouTubeVideoId(entry.artist, entry.title)
+      if (videoId) {
+        console.log(`✓ (${videoId})`)
+        videosFound++
+      } else {
+        console.log('✗ (not found)')
+      }
+
+      // Wait between requests to avoid rate limiting
+      if (i < defaultHistory.length - 1) {
+        await delay(DELAY_MS)
+      }
+    }
+
+    // Generate YouTube URL
+    if (videoId) {
+      youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`
+    } else if (!youtubeUrl) {
+      youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`
+    }
 
     await db.insert(djHistory).values({
       id: createId(),
@@ -125,14 +182,20 @@ async function main() {
       artist: entry.artist,
       title: entry.title,
       youtubeUrl,
-      videoId: entry.videoId || null,
+      videoId,
       playedAt: new Date(entry.date).toISOString(),
     })
-    console.log(`  ✓ ${entry.date}: ${entry.djName} - ${entry.artist} - ${entry.title}`)
+
+    if (!FETCH_VIDEO_IDS) {
+      console.log(`  ✓ ${entry.date}: ${entry.djName} - ${entry.artist} - ${entry.title}`)
+    }
     created++
   }
 
-  console.log(`\n✅ History: ${created} created, ${skipped} skipped (already exist)`)
+  console.log(`\n✅ History: ${created} created, ${skipped} skipped`)
+  if (FETCH_VIDEO_IDS) {
+    console.log(`   📺 YouTube videos found: ${videosFound}/${created}`)
+  }
 
   // Seed next DailySession (A. Gautier on 2025-12-15)
   console.log('\n📅 Seeding next session...')
