@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
+import YouTubePlayer, { PlayButton } from '@/components/YouTubePlayer'
 import { DJHistory } from '@/types'
 import { useTranslations, useLocale } from 'next-intl'
 import {
@@ -17,6 +18,7 @@ import {
   Loader2,
   Sparkles,
   ExternalLink,
+  Play,
 } from 'lucide-react'
 
 export default function HistoryPage() {
@@ -28,6 +30,8 @@ export default function HistoryPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [isFetchingYouTube, setIsFetchingYouTube] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [playerOpen, setPlayerOpen] = useState(false)
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1)
 
   // Form states
   const [newEntry, setNewEntry] = useState({
@@ -176,9 +180,50 @@ export default function HistoryPage() {
     return match && match[7].length === 11 ? match[7] : null
   }
 
+  // Player functions
+  const playVideo = (index: number) => {
+    setCurrentPlayingIndex(index)
+    setPlayerOpen(true)
+  }
+
+  const playNext = () => {
+    if (currentPlayingIndex < history.length - 1) {
+      setCurrentPlayingIndex(currentPlayingIndex + 1)
+    }
+  }
+
+  const playPrevious = () => {
+    if (currentPlayingIndex > 0) {
+      setCurrentPlayingIndex(currentPlayingIndex - 1)
+    }
+  }
+
+  const closePlayer = () => {
+    setPlayerOpen(false)
+    setCurrentPlayingIndex(-1)
+  }
+
+  const currentVideo = currentPlayingIndex >= 0 ? history[currentPlayingIndex] : null
+  const currentVideoId = currentVideo ? getYoutubeVideoId(currentVideo.youtubeUrl) : null
+
   return (
     <div className="min-h-screen">
       <Header />
+
+      {/* YouTube Player Modal */}
+      {currentVideoId && currentVideo && (
+        <YouTubePlayer
+          videoId={currentVideoId}
+          title={currentVideo.title}
+          artist={currentVideo.artist}
+          isOpen={playerOpen}
+          onClose={closePlayer}
+          onNext={playNext}
+          onPrevious={playPrevious}
+          hasNext={currentPlayingIndex < history.length - 1}
+          hasPrevious={currentPlayingIndex > 0}
+        />
+      )}
 
       <main className="container mx-auto px-4 py-8">
         <motion.div
@@ -463,6 +508,13 @@ export default function HistoryPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => playVideo(history.indexOf(entry))}
+                                className="p-1.5 text-green-500 hover:bg-green-500/20 rounded transition-colors"
+                                title={t('history.play')}
+                              >
+                                <Play className="w-4 h-4" />
+                              </button>
                               <a
                                 href={entry.youtubeUrl}
                                 target="_blank"
