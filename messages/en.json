@@ -75,7 +75,10 @@
     "noResults": "No results",
     "tryAnotherSearch": "Try another search",
     "searchOnYoutube": "Search on YouTube",
-    "searchingVideo": "Searching for video..."
+    "searchingVideo": "Searching for video...",
+    "exportXlsx": "Export",
+    "songsPlayed": "Songs played",
+    "djCounter": "DJ Counter"
   },
   "user": {
     "title": "Management",
