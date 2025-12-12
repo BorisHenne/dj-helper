@@ -602,12 +602,25 @@ export default function HistoryPage() {
                             />
                           </td>
                           <td className="py-2 px-4">
-                            <input
-                              type="text"
-                              value={editEntry.title || ''}
-                              onChange={(e) => setEditEntry({ ...editEntry, title: e.target.value })}
-                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
-                            />
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                value={editEntry.title || ''}
+                                onChange={(e) => setEditEntry({ ...editEntry, title: e.target.value })}
+                                className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                                placeholder={t('history.songTitle')}
+                              />
+                              <div className="flex items-center gap-1">
+                                <Youtube className="w-3 h-3 text-red-500 flex-shrink-0" />
+                                <input
+                                  type="url"
+                                  value={editEntry.youtubeUrl || ''}
+                                  onChange={(e) => setEditEntry({ ...editEntry, youtubeUrl: e.target.value })}
+                                  className="w-full text-xs bg-white/10 rounded px-2 py-1"
+                                  placeholder="https://youtube.com/watch?v=..."
+                                />
+                              </div>
+                            </div>
                           </td>
                           <td className="py-2 px-4">
                             <div className="flex items-center justify-center gap-1">
@@ -694,22 +707,6 @@ export default function HistoryPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-1">
-                              <button
-                                onClick={() => playVideo(index)}
-                                className="p-1.5 text-green-500 hover:bg-green-500/20 rounded transition-colors"
-                                title={t('history.play')}
-                              >
-                                <Play className="w-4 h-4" />
-                              </button>
-                              <a
-                                href={entry.youtubeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
-                                title={t('history.watchOnYoutube')}
-                              >
-                                <Youtube className="w-4 h-4" />
-                              </a>
                               <button
                                 onClick={() => startEdit(entry)}
                                 className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded"
