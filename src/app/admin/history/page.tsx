@@ -328,7 +328,7 @@ export default function HistoryPage() {
             </div>
             {searchQuery && (
               <p className="text-sm text-gray-400 mt-2">
-                {filteredHistory.length} {t('history.entries')} {locale === 'fr' ? 'trouvées' : 'found'}
+                {filteredHistory.length} {t('history.entries')} {t('history.found')}
               </p>
             )}
           </div>
@@ -354,7 +354,7 @@ export default function HistoryPage() {
                         className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 focus:border-neon-blue focus:outline-none"
                         required
                       >
-                        <option value="" className="bg-gray-900">{locale === 'fr' ? 'Sélectionner un DJ' : 'Select a DJ'}</option>
+                        <option value="" className="bg-gray-900">{t('history.selectDj')}</option>
                         {djs.map(dj => (
                           <option key={dj.id} value={dj.name} className="bg-gray-900">
                             {dj.name}
@@ -433,10 +433,10 @@ export default function HistoryPage() {
                       onClick={searchYouTube}
                       disabled={!newEntry.artist && !newEntry.title}
                       className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                      title={locale === 'fr' ? 'Rechercher sur YouTube' : 'Search on YouTube'}
+                      title={t('history.searchOnYoutube')}
                     >
                       <Youtube className="w-4 h-4" />
-                      <span>{locale === 'fr' ? 'Rechercher' : 'Search'}</span>
+                      <span>{t('common.search')}</span>
                     </button>
                   </div>
 
@@ -481,8 +481,8 @@ export default function HistoryPage() {
           ) : filteredHistory.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="mb-2">{searchQuery ? (locale === 'fr' ? 'Aucun résultat' : 'No results') : t('history.noEntries')}</p>
-              <p className="text-sm">{searchQuery ? (locale === 'fr' ? 'Essayez une autre recherche' : 'Try another search') : t('history.addMusic')}</p>
+              <p className="mb-2">{searchQuery ? t('history.noResults') : t('history.noEntries')}</p>
+              <p className="text-sm">{searchQuery ? t('history.tryAnotherSearch') : t('history.addMusic')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -505,7 +505,7 @@ export default function HistoryPage() {
                       {t('history.songTitle')}
                     </th>
                     <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm w-32">
-                      Actions
+                      {t('common.actions')}
                     </th>
                   </tr>
                 </thead>

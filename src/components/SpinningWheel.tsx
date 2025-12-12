@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { DJWithProbability } from '@/types'
+import { useTranslations } from 'next-intl'
 
 interface SpinningWheelProps {
   djs: DJWithProbability[]
@@ -17,6 +18,7 @@ export default function SpinningWheel({
   isSpinning,
   setIsSpinning,
 }: SpinningWheelProps) {
+  const t = useTranslations()
   const wheelRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
   const [winner, setWinner] = useState<DJWithProbability | null>(null)
@@ -56,8 +58,8 @@ export default function SpinningWheel({
       <div className="flex flex-col items-center justify-center p-8">
         <div className="text-6xl mb-4">🎧</div>
         <p className="text-gray-400 text-center">
-          Aucun DJ actif pour le moment.<br />
-          Ajoutez des participants dans l'admin !
+          {t('home.noDjActive')}<br />
+          {t('home.addParticipantsInAdmin')}
         </p>
       </div>
     )
@@ -144,12 +146,12 @@ export default function SpinningWheel({
             >
               🎵
             </motion.span>
-            Spinning...
+            {t('home.spinning')}
           </span>
         ) : (
           <span className="flex items-center gap-2">
             <span>🎰</span>
-            Tourner la roue !
+            {t('home.spinWheel')}
           </span>
         )}
       </motion.button>
@@ -162,14 +164,14 @@ export default function SpinningWheel({
           className="winner-animation glass rounded-2xl p-6 text-center"
         >
           <p className="text-neon-yellow text-sm uppercase tracking-wider mb-2">
-            Le DJ du jour est...
+            {t('home.djOfTheDayIs')}
           </p>
           <div className="text-6xl mb-2">{winner.avatar || '🎧'}</div>
           <h2 className="text-3xl font-bold text-glow text-neon-pink">
             {winner.name}
           </h2>
           <p className="text-gray-400 text-sm mt-2">
-            Probabilité: {winner.probability.toFixed(1)}%
+            {t('home.probability')}: {winner.probability.toFixed(1)}%
           </p>
         </motion.div>
       )}

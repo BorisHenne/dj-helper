@@ -10,11 +10,14 @@ import ConfirmButton from '@/components/ConfirmButton'
 import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse } from '@/types'
 import { RefreshCw, Trophy, Users } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 
 // Import dynamique de react-confetti pour éviter les erreurs SSR
 const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
 
 export default function HomePage() {
+  const t = useTranslations()
+  const locale = useLocale()
   const [djs, setDjs] = useState<DJWithProbability[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSpinning, setIsSpinning] = useState(false)
@@ -61,7 +64,7 @@ export default function HomePage() {
       await fetch(`/api/djs/${winner.id}/play`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: `Blindtest du ${new Date().toLocaleDateString('fr-FR')}` }),
+        body: JSON.stringify({ notes: `Blindtest du ${new Date().toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}` }),
       })
 
       // Rafraîchir les probabilités
@@ -103,12 +106,12 @@ export default function HomePage() {
               className="text-center mb-8"
             >
               <h2 className="text-3xl font-bold mb-2">
-                <span className="text-glow text-neon-pink">Qui sera le DJ</span>
+                <span className="text-glow text-neon-pink">{t('home.whoWillBeDj')}</span>
                 <br />
-                <span className="text-glow text-neon-blue">du jour ?</span>
+                <span className="text-glow text-neon-blue">{t('home.ofTheDay')}</span>
               </h2>
               <p className="text-gray-400">
-                Tournez la roue pour désigner le prochain DJ du blindtest !
+                {t('home.spinDescription')}
               </p>
             </motion.div>
 
@@ -150,7 +153,7 @@ export default function HomePage() {
                     className="mt-4 w-full py-2 text-gray-400 hover:text-white flex items-center justify-center gap-2 transition-colors"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Recommencer
+                    {t('common.restart')}
                   </button>
                 </motion.div>
               )}
@@ -171,7 +174,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-neon-yellow" />
-                  Probabilités
+                  {t('home.probabilities')}
                 </h3>
                 <button
                   onClick={fetchProbabilities}
@@ -193,9 +196,9 @@ export default function HomePage() {
               ) : djs.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucun DJ pour le moment</p>
+                  <p>{t('home.noDjsYet')}</p>
                   <p className="text-sm mt-2">
-                    Ajoutez des participants dans l'admin
+                    {t('home.addParticipantsInAdmin')}
                   </p>
                 </div>
               ) : (
@@ -218,13 +221,13 @@ export default function HomePage() {
                     <div className="text-2xl font-bold text-neon-pink">
                       {djs.length}
                     </div>
-                    <div className="text-xs text-gray-400">DJs actifs</div>
+                    <div className="text-xs text-gray-400">{t('home.activeDjs')}</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-neon-blue">
                       {djs.reduce((sum, dj) => sum + dj.totalPlays, 0)}
                     </div>
-                    <div className="text-xs text-gray-400">Blindtests total</div>
+                    <div className="text-xs text-gray-400">{t('home.totalBlindtests')}</div>
                   </div>
                 </div>
               )}

@@ -5,8 +5,11 @@ import { motion } from 'framer-motion'
 import { DJHistory } from '@/types'
 import { Music, User, Calendar, Youtube, ExternalLink, Play } from 'lucide-react'
 import YouTubePlayer from './YouTubePlayer'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function LatestMusic() {
+  const t = useTranslations()
+  const locale = useLocale()
   const [latest, setLatest] = useState<DJHistory | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [playerOpen, setPlayerOpen] = useState(false)
@@ -34,7 +37,7 @@ export default function LatestMusic() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
+    return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -67,11 +70,11 @@ export default function LatestMusic() {
       >
         <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
           <Music className="w-5 h-5 text-neon-green" />
-          Dernière musique
+          {t('home.latestMusic')}
         </h3>
         <div className="text-center py-8 text-gray-400">
           <Music className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">Aucune musique dans l'historique</p>
+          <p className="text-sm">{t('history.noEntries')}</p>
         </div>
       </motion.div>
     )
@@ -99,7 +102,7 @@ export default function LatestMusic() {
       >
         <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
           <Music className="w-5 h-5 text-neon-green" />
-          Dernière musique
+          {t('home.latestMusic')}
         </h3>
 
         {/* Clickable Thumbnail */}
@@ -128,7 +131,7 @@ export default function LatestMusic() {
           >
             <div className="text-center">
               <Youtube className="w-16 h-16 mx-auto mb-2 text-red-500 group-hover:scale-110 transition-transform" />
-              <span className="text-sm text-gray-300">Voir sur YouTube</span>
+              <span className="text-sm text-gray-300">{t('history.watchOnYoutube')}</span>
             </div>
           </a>
         )}
@@ -164,7 +167,7 @@ export default function LatestMusic() {
           className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors text-sm"
         >
           <Youtube className="w-4 h-4" />
-          Voir sur YouTube
+          {t('history.watchOnYoutube')}
           <ExternalLink className="w-3 h-3" />
         </a>
       </motion.div>

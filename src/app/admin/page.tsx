@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
 import { DJ, Settings, ImportResult } from '@/types'
 import { AVATAR_EMOJIS } from '@/lib/probability'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Plus,
   Upload,
@@ -24,6 +25,8 @@ import {
 } from 'lucide-react'
 
 export default function AdminPage() {
+  const t = useTranslations()
+  const locale = useLocale()
   const [djs, setDjs] = useState<DJ[]>([])
   const [settings, setSettings] = useState<Settings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -93,7 +96,7 @@ export default function AdminPage() {
   }
 
   const handleDeleteDj = async (id: string, name: string) => {
-    if (!confirm(`Supprimer ${name} définitivement ?`)) return
+    if (!confirm(t('admin.deleteConfirm', { name }))) return
 
     try {
       await fetch(`/api/djs/${id}`, { method: 'DELETE' })
@@ -168,7 +171,7 @@ export default function AdminPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-'
-    return new Date(dateStr).toLocaleDateString('fr-FR')
+    return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')
   }
 
   return (
@@ -182,10 +185,10 @@ export default function AdminPage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold mb-2">
-            <span className="text-glow-sm text-neon-pink">Administration</span>
+            <span className="text-glow-sm text-neon-pink">{t('admin.title')}</span>
           </h1>
           <p className="text-gray-400">
-            Gérez les participants et les paramètres de l'application
+            {t('admin.subtitle')}
           </p>
         </motion.div>
 
@@ -224,7 +227,7 @@ export default function AdminPage() {
               <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <User className="w-5 h-5 text-neon-blue" />
-                  Participants ({djs.length})
+                  {t('admin.participants')} ({djs.length})
                 </h2>
 
                 <div className="flex flex-wrap gap-2">
@@ -236,13 +239,13 @@ export default function AdminPage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Plus className="w-4 h-4" />
-                    Ajouter
+                    {t('common.add')}
                   </motion.button>
 
                   {/* Import Excel */}
                   <label className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2 cursor-pointer">
                     <Upload className="w-4 h-4" />
-                    Import Excel
+                    {t('admin.importExcel')}
                     <input
                       type="file"
                       accept=".xlsx,.xls"
@@ -257,7 +260,7 @@ export default function AdminPage() {
                     className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
-                    Template
+                    {t('admin.template')}
                   </a>
                 </div>
               </div>
@@ -274,19 +277,19 @@ export default function AdminPage() {
                   >
                     <div className="grid sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="text-sm text-gray-400 mb-1 block">Nom</label>
+                        <label className="text-sm text-gray-400 mb-1 block">{t('common.name')}</label>
                         <input
                           type="text"
                           value={newDj.name}
                           onChange={(e) => setNewDj({ ...newDj, name: e.target.value })}
-                          placeholder="Nom du DJ"
+                          placeholder={t('history.djName')}
                           className="w-full"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-400 mb-1 block">Avatar</label>
+                        <label className="text-sm text-gray-400 mb-1 block">{t('common.avatar')}</label>
                         <div className="flex flex-wrap gap-1 p-2 bg-white/5 rounded-lg max-h-20 overflow-y-auto">
                           {AVATAR_EMOJIS.map((emoji) => (
                             <button
@@ -304,7 +307,7 @@ export default function AdminPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-400 mb-1 block">Couleur</label>
+                        <label className="text-sm text-gray-400 mb-1 block">{t('common.color')}</label>
                         <input
                           type="color"
                           value={newDj.color}
@@ -320,13 +323,13 @@ export default function AdminPage() {
                         onClick={() => setShowAddForm(false)}
                         className="px-4 py-2 text-gray-400 hover:text-white"
                       >
-                        Annuler
+                        {t('common.cancel')}
                       </button>
                       <button
                         type="submit"
                         className="px-4 py-2 bg-green-500 rounded-lg font-bold"
                       >
-                        Ajouter
+                        {t('common.add')}
                       </button>
                     </div>
                   </motion.form>
@@ -343,9 +346,9 @@ export default function AdminPage() {
               ) : djs.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="mb-2">Aucun participant</p>
+                  <p className="mb-2">{t('admin.noParticipants')}</p>
                   <p className="text-sm">
-                    Ajoutez des DJs manuellement ou importez un fichier Excel
+                    {t('admin.addDjsOrImport')}
                   </p>
                 </div>
               ) : (
@@ -448,7 +451,7 @@ export default function AdminPage() {
                                   : 'bg-gray-500/20 text-gray-400'
                               }`}
                             >
-                              {dj.isActive ? 'Actif' : 'Inactif'}
+                              {dj.isActive ? t('admin.active') : t('admin.inactive')}
                             </button>
                             <button
                               onClick={() => startEdit(dj)}
@@ -481,7 +484,7 @@ export default function AdminPage() {
             >
               <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
                 <Sliders className="w-5 h-5 text-neon-yellow" />
-                Paramètres
+                {t('admin.settings')}
               </h2>
 
               {settings && (
@@ -490,7 +493,7 @@ export default function AdminPage() {
                   <div>
                     <div className="flex justify-between mb-2">
                       <label className="text-sm text-gray-400">
-                        Poids de l'ancienneté
+                        {t('admin.weightSeniority')}
                       </label>
                       <span className="text-neon-pink font-bold">
                         {(settings.weightLastPlayed * 100).toFixed(0)}%
@@ -508,7 +511,7 @@ export default function AdminPage() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Plus le poids est élevé, plus les DJs qui n'ont pas joué depuis longtemps seront favorisés
+                      {t('admin.weightSeniorityDescription')}
                     </p>
                   </div>
 
@@ -516,7 +519,7 @@ export default function AdminPage() {
                   <div>
                     <div className="flex justify-between mb-2">
                       <label className="text-sm text-gray-400">
-                        Poids du nb de passages
+                        {t('admin.weightPlayCount')}
                       </label>
                       <span className="text-neon-blue font-bold">
                         {(settings.weightTotalPlays * 100).toFixed(0)}%
@@ -534,7 +537,7 @@ export default function AdminPage() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Plus le poids est élevé, plus les DJs avec peu de passages seront favorisés
+                      {t('admin.weightPlayCountDescription')}
                     </p>
                   </div>
 
@@ -542,18 +545,18 @@ export default function AdminPage() {
                   <div className="p-4 bg-white/5 rounded-xl">
                     <h4 className="font-bold text-sm mb-2 flex items-center gap-2">
                       <FileSpreadsheet className="w-4 h-4 text-neon-green" />
-                      Format d'import Excel
+                      {t('admin.excelImportFormat')}
                     </h4>
                     <ul className="text-xs text-gray-400 space-y-1">
-                      <li>• Colonne A : Nom du DJ</li>
-                      <li>• Colonne B : Nombre de passages</li>
-                      <li>• Colonne C : Date du dernier passage</li>
+                      <li>• {t('admin.columnA')}</li>
+                      <li>• {t('admin.columnB')}</li>
+                      <li>• {t('admin.columnC')}</li>
                     </ul>
                     <a
                       href="/api/template"
                       className="text-neon-pink text-xs hover:underline mt-2 inline-block"
                     >
-                      Télécharger le template
+                      {t('admin.downloadTemplate')}
                     </a>
                   </div>
                 </div>
