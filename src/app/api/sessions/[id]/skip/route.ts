@@ -30,7 +30,7 @@ export async function POST(
       .set({
         status: 'skipped',
         skipReason: reason?.trim() || 'Daily annulée',
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(dailySessions.id, id))
       .returning()

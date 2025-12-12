@@ -90,12 +90,12 @@ async function main() {
 
   for (const entry of historyData) {
     // Vérifier si l'entrée existe déjà (même date et même DJ)
-    const playedAtDate = new Date(entry.date)
+    const playedAtISO = new Date(entry.date).toISOString()
     const [existing] = await db.select()
       .from(djHistory)
       .where(and(
         eq(djHistory.djName, entry.dj),
-        eq(djHistory.playedAt, playedAtDate)
+        eq(djHistory.playedAt, playedAtISO)
       ))
       .limit(1)
 
@@ -111,7 +111,7 @@ async function main() {
       title: entry.title,
       artist: entry.artist,
       youtubeUrl: generateYoutubeUrl(entry.artist, entry.title),
-      playedAt: playedAtDate,
+      playedAt: playedAtISO,
     })
 
     console.log(`✅ Créé: ${entry.date} - ${entry.dj} - ${entry.artist} - ${entry.title}`)

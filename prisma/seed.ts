@@ -50,8 +50,8 @@ async function main() {
       await db.update(djs)
         .set({
           totalPlays: dj.totalPlays,
-          lastPlayedAt: new Date(dj.lastPlayedAt),
-          updatedAt: new Date(),
+          lastPlayedAt: new Date(dj.lastPlayedAt).toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(djs.name, dj.name))
     } else {
@@ -62,7 +62,7 @@ async function main() {
         avatar: dj.avatar,
         color: dj.color,
         totalPlays: dj.totalPlays,
-        lastPlayedAt: new Date(dj.lastPlayedAt),
+        lastPlayedAt: new Date(dj.lastPlayedAt).toISOString(),
         isActive: true,
       })
     }
@@ -82,9 +82,8 @@ async function main() {
 
   const existingKeys = new Set(
     existingHistory.map(h => {
-      const dateStr = h.playedAt instanceof Date
-        ? h.playedAt.toISOString().split('T')[0]
-        : new Date(h.playedAt).toISOString().split('T')[0]
+      // playedAt is now always stored as an ISO string
+      const dateStr = new Date(h.playedAt).toISOString().split('T')[0]
       return `${h.djName}-${h.title}-${dateStr}`
     })
   )
@@ -106,7 +105,7 @@ async function main() {
       artist: entry.artist,
       title: entry.title,
       youtubeUrl: entry.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`,
-      playedAt: new Date(entry.date),
+      playedAt: new Date(entry.date).toISOString(),
     })
     console.log(`  ✓ ${entry.date}: ${entry.djName} - ${entry.artist} - ${entry.title}`)
     created++

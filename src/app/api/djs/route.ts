@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       avatar: avatar || getRandomEmoji(),
       color: color || getRandomColor(),
       totalPlays: typeof totalPlays === 'number' ? Math.max(0, Math.floor(totalPlays)) : 0,
-      lastPlayedAt: lastPlayedAt && typeof lastPlayedAt === 'string' ? new Date(lastPlayedAt) : null,
+      lastPlayedAt: lastPlayedAt && typeof lastPlayedAt === 'string' ? new Date(lastPlayedAt).toISOString() : null,
     }).returning()
 
     return NextResponse.json(dj, { status: 201 })

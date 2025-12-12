@@ -66,7 +66,7 @@ export async function POST(
         videoId: videoId || null,
         title: finalTitle,
         artist: finalArtist,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(dailySessions.id, id))
       .returning()

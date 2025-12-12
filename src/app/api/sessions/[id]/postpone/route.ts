@@ -40,7 +40,7 @@ export async function POST(
     }
 
     // Calculer le prochain jour ouvrable
-    const baseDate = mockDate || existing.date
+    const baseDate = mockDate || (existing.date ? new Date(existing.date) : new Date())
     const nextBusinessDay = getNextBusinessDay(baseDate, true)
 
     // Marquer la session actuelle comme skipped
@@ -48,7 +48,7 @@ export async function POST(
       .set({
         status: 'skipped',
         skipReason: 'Reporté',
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(dailySessions.id, id))
 
@@ -61,8 +61,8 @@ export async function POST(
     const [existingNextSession] = await db.select()
       .from(dailySessions)
       .where(and(
-        gte(dailySessions.date, nextDayStart),
-        lte(dailySessions.date, nextDayEnd)
+        gte(dailySessions.date, nextDayStart.toISOString()),
+        lte(dailySessions.date, nextDayEnd.toISOString())
       ))
       .limit(1)
 
@@ -74,7 +74,7 @@ export async function POST(
           djId: existing.djId,
           djName: existing.djName,
           status: 'pending',
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(dailySessions.id, existingNextSession.id))
         .returning()
@@ -82,7 +82,7 @@ export async function POST(
     } else {
       // Créer une nouvelle session pour le prochain jour ouvrable avec le même DJ
       const [created] = await db.insert(dailySessions).values({
-        date: nextBusinessDay,
+        date: nextBusinessDay.toISOString(),
         djId: existing.djId,
         djName: existing.djName,
         status: 'pending'

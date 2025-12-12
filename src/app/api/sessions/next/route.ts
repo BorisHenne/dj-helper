@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
     const [todaySession] = await db.select()
       .from(dailySessions)
       .where(and(
-        gte(dailySessions.date, today),
-        lte(dailySessions.date, todayEnd),
+        gte(dailySessions.date, today.toISOString()),
+        lte(dailySessions.date, todayEnd.toISOString()),
         eq(dailySessions.status, 'pending')
       ))
       .limit(1)
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const [nextSession] = await db.select()
       .from(dailySessions)
       .where(and(
-        gte(dailySessions.date, tomorrow),
+        gte(dailySessions.date, tomorrow.toISOString()),
         eq(dailySessions.status, 'pending')
       ))
       .orderBy(asc(dailySessions.date))

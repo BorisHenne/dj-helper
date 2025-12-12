@@ -51,7 +51,7 @@ export async function PATCH(
 
     // Construire les données de mise à jour
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     }
 
     if (djId !== undefined) updateData.djId = djId
@@ -67,7 +67,7 @@ export async function PATCH(
     if (title !== undefined) updateData.title = title?.trim() || null
     if (artist !== undefined) updateData.artist = artist?.trim() || null
     if (skipReason !== undefined) updateData.skipReason = skipReason?.trim() || null
-    if (date !== undefined) updateData.date = parseDateISO(date)
+    if (date !== undefined) updateData.date = parseDateISO(date).toISOString()
 
     const [session] = await db.update(dailySessions)
       .set(updateData)

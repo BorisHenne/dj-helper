@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     const [existing] = await db.select()
       .from(dailySessions)
       .where(and(
-        gte(dailySessions.date, startOfDay),
-        lt(dailySessions.date, endOfDay)
+        gte(dailySessions.date, startOfDay.toISOString()),
+        lt(dailySessions.date, endOfDay.toISOString())
       ))
       .limit(1)
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Créer la session
     const [session] = await db.insert(dailySessions).values({
       id: createId(),
-      date: sessionDate,
+      date: sessionDate.toISOString(),
       djId: djId || null,
       djName: djName.trim(),
       status: 'pending',
