@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { eq } from 'drizzle-orm'
-import { djs, djHistory } from '../src/db/schema'
+import { djs, djHistory, dailySessions } from '../src/db/schema'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createId } from '@paralleldrive/cuid2'
@@ -126,6 +126,39 @@ async function main() {
   }
 
   console.log(`\n✅ History: ${created} created, ${skipped} skipped (already exist)`)
+
+  // Seed next DailySession (A. Gautier on 2025-12-15)
+  console.log('\n📅 Seeding next session...')
+
+  // Find A. Gautier DJ
+  const [gautierDj] = await db.select()
+    .from(djs)
+    .where(eq(djs.name, 'A. Gautier'))
+    .limit(1)
+
+  if (gautierDj) {
+    // Check if session already exists
+    const [existingSession] = await db.select()
+      .from(dailySessions)
+      .where(eq(dailySessions.date, '2025-12-15T00:00:00.000Z'))
+      .limit(1)
+
+    if (!existingSession) {
+      await db.insert(dailySessions).values({
+        id: createId(),
+        date: '2025-12-15T00:00:00.000Z',
+        djId: gautierDj.id,
+        djName: gautierDj.name,
+        status: 'pending',
+      })
+      console.log('  ✓ Session 2025-12-15: A. Gautier (pending)')
+    } else {
+      console.log('  ⏭️  Session 2025-12-15 already exists')
+    }
+  } else {
+    console.log('  ⚠️  A. Gautier not found, skipping session creation')
+  }
+
   console.log('\n🎉 Database seeding complete!')
 }
 
