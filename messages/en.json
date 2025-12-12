@@ -69,7 +69,8 @@
     "found": "found",
     "noResults": "No results",
     "tryAnotherSearch": "Try another search",
-    "searchOnYoutube": "Search on YouTube"
+    "searchOnYoutube": "Search on YouTube",
+    "searchingVideo": "Searching for video..."
   },
   "admin": {
     "title": "Administration",

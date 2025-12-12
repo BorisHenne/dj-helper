@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { DJHistory } from '@/types'
-import { Music, User, Calendar, Youtube, ExternalLink, Play } from 'lucide-react'
+import { Music, User, Calendar, Youtube, ExternalLink, Play, Loader2 } from 'lucide-react'
 import YouTubePlayer from './YouTubePlayer'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -13,6 +13,8 @@ export default function LatestMusic() {
   const [latest, setLatest] = useState<DJHistory | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [playerOpen, setPlayerOpen] = useState(false)
+  const [searchedVideoId, setSearchedVideoId] = useState<string | null>(null)
+  const [isSearchingVideo, setIsSearchingVideo] = useState(false)
 
   useEffect(() => {
     const fetchLatest = async () => {
@@ -29,6 +31,36 @@ export default function LatestMusic() {
 
     fetchLatest()
   }, [])
+
+  // Fetch video ID from search API when URL doesn't contain a valid ID
+  useEffect(() => {
+    const fetchVideoIdFromSearch = async () => {
+      if (!latest) return
+
+      const urlVideoId = getYoutubeVideoId(latest.youtubeUrl)
+      if (urlVideoId) return // Already have a valid ID from URL
+
+      setIsSearchingVideo(true)
+      try {
+        const response = await fetch(
+          `/api/youtube/search?artist=${encodeURIComponent(latest.artist)}&title=${encodeURIComponent(latest.title)}`
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.videoId) {
+            setSearchedVideoId(data.videoId)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch video ID:', error)
+      } finally {
+        setIsSearchingVideo(false)
+      }
+    }
+
+    fetchVideoIdFromSearch()
+  }, [latest])
 
   const getYoutubeVideoId = (url: string) => {
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
@@ -80,7 +112,7 @@ export default function LatestMusic() {
     )
   }
 
-  const videoId = getYoutubeVideoId(latest.youtubeUrl)
+  const videoId = getYoutubeVideoId(latest.youtubeUrl) || searchedVideoId
 
   return (
     <>
@@ -122,6 +154,13 @@ export default function LatestMusic() {
               </div>
             </div>
           </button>
+        ) : isSearchingVideo ? (
+          <div className="aspect-video rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-gray-900/50 to-gray-700/50 flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 mx-auto mb-2 text-neon-blue animate-spin" />
+              <span className="text-sm text-gray-300">{t('history.searchingVideo')}</span>
+            </div>
+          </div>
         ) : (
           <a
             href={latest.youtubeUrl}
