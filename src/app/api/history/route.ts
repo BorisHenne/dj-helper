@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Le lien YouTube n\'est pas valide' }, { status: 400 })
     }
 
+    const entryDate = playedAt ? new Date(playedAt) : new Date()
+
     const entry = await prisma.dJHistory.create({
       data: {
         id: generateCuid(),
@@ -58,9 +60,25 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         artist: artist.trim(),
         youtubeUrl: youtubeUrl.trim(),
-        playedAt: playedAt ? new Date(playedAt) : new Date(),
+        playedAt: entryDate,
       },
     })
+
+    // Update DJ stats (totalPlays and lastPlayedAt)
+    const dj = await prisma.dJ.findUnique({
+      where: { name: djName.trim() },
+    })
+
+    if (dj) {
+      await prisma.dJ.update({
+        where: { name: djName.trim() },
+        data: {
+          totalPlays: { increment: 1 },
+          // Only update lastPlayedAt if the new entry is more recent
+          ...(entryDate > dj.lastPlayedAt && { lastPlayedAt: entryDate }),
+        },
+      })
+    }
 
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {
