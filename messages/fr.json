@@ -74,7 +74,10 @@
     "noResults": "Aucun résultat",
     "tryAnotherSearch": "Essayez une autre recherche",
     "searchOnYoutube": "Rechercher sur YouTube",
-    "searchingVideo": "Recherche de la vidéo..."
+    "searchingVideo": "Recherche de la vidéo...",
+    "exportXlsx": "Exporter",
+    "songsPlayed": "Musiques jouées",
+    "djCounter": "Compteur DJ"
   },
   "user": {
     "title": "Gestion",

@@ -22,7 +22,9 @@ import {
   ChevronDown,
   Calendar,
   User,
+  Download,
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 // Mobile Card Component for history entries
 function MobileHistoryCard({
@@ -326,6 +328,50 @@ export default function HistoryPage() {
     })
   }
 
+  // Export history to XLSX with DJ counter
+  const exportToXlsx = () => {
+    // Create history data for first sheet
+    const historyData = history.map(entry => ({
+      [t('history.playedAt')]: formatDate(entry.playedAt),
+      'DJ': entry.djName,
+      [t('history.artist')]: entry.artist,
+      [t('history.songTitle')]: entry.title,
+      [t('history.youtubeUrl')]: entry.youtubeUrl,
+    }))
+
+    // Calculate DJ counter for second sheet
+    const djCounter: Record<string, number> = {}
+    history.forEach(entry => {
+      djCounter[entry.djName] = (djCounter[entry.djName] || 0) + 1
+    })
+
+    // Convert to array and sort by count descending
+    const djCounterData = Object.entries(djCounter)
+      .sort((a, b) => b[1] - a[1])
+      .map(([djName, count]) => ({
+        'DJ': djName,
+        [t('history.songsPlayed')]: count,
+      }))
+
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+
+    // Add history sheet
+    const historySheet = XLSX.utils.json_to_sheet(historyData)
+    XLSX.utils.book_append_sheet(wb, historySheet, t('common.history'))
+
+    // Add DJ counter sheet
+    const counterSheet = XLSX.utils.json_to_sheet(djCounterData)
+    XLSX.utils.book_append_sheet(wb, counterSheet, t('history.djCounter'))
+
+    // Generate filename with current date
+    const today = new Date().toISOString().split('T')[0]
+    const filename = `dj-history-${today}.xlsx`
+
+    // Download the file
+    XLSX.writeFile(wb, filename)
+  }
+
   const getYoutubeVideoId = (url: string) => {
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
     const match = url.match(regExp)
@@ -488,6 +534,16 @@ export default function HistoryPage() {
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('common.add')}</span>
+              </motion.button>
+
+              <motion.button
+                onClick={exportToXlsx}
+                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center gap-2 tap-target"
+                whileTap={{ scale: 0.95 }}
+                title={t('history.exportXlsx')}
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('history.exportXlsx')}</span>
               </motion.button>
 
               <motion.button
