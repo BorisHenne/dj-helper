@@ -45,6 +45,7 @@ RUN adduser --system --uid 1001 --home /home/nextjs nextjs
 # Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
@@ -73,5 +74,5 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# Initialize database and start
-CMD node node_modules/prisma/build/index.js db push && node server.js
+# Initialize database, seed data, and start
+CMD node node_modules/prisma/build/index.js db push && node prisma/seed.mjs && node server.js

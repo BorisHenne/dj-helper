@@ -1,33 +1,23 @@
 import { PrismaClient } from '@prisma/client'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
 const prisma = new PrismaClient()
 
 // Load default DJs from JSON file
 const defaultDJs = JSON.parse(
   readFileSync(join(__dirname, 'data', 'default-djs.json'), 'utf-8')
-) as Array<{
-  name: string
-  totalPlays: number
-  lastPlayedAt: string
-  avatar: string
-  color: string
-}>
+)
 
 // Load default history from JSON file
 const defaultHistory = JSON.parse(
   readFileSync(join(__dirname, 'data', 'default-history.json'), 'utf-8')
-) as Array<{
-  date: string
-  djName: string
-  artist: string
-  title: string
-  youtubeUrl?: string
-}>
+)
 
 // Generate a simple unique ID
-function generateId(): string {
+function generateId() {
   const timestamp = Date.now().toString(36)
   const randomPart = Math.random().toString(36).substring(2, 15)
   return `c${timestamp}${randomPart}`
