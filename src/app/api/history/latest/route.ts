@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering (database access)
+export const dynamic = 'force-dynamic'
+
 // GET - Récupérer la dernière entrée d'historique
 export async function GET() {
   try {

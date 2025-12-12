@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchYouTubeInfo } from '@/lib/youtube'
 
+// Force dynamic rendering (uses searchParams)
+export const dynamic = 'force-dynamic'
+
 // GET - Fetch YouTube video info from URL
 export async function GET(request: NextRequest) {
   try {
