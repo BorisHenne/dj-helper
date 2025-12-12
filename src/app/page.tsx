@@ -8,7 +8,6 @@ import SpinningWheel, { SpinningWheelRef } from '@/components/SpinningWheel'
 import DJCard from '@/components/DJCard'
 import ConfirmButton from '@/components/ConfirmButton'
 import TodayDJ from '@/components/TodayDJ'
-import NextDJManager from '@/components/NextDJManager'
 import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse, TodaySessionResponse } from '@/types'
 import { RefreshCw, Trophy, Users, Calendar } from 'lucide-react'
@@ -221,10 +220,6 @@ export default function HomePage() {
     fetchProbabilities()
   }
 
-  const handleSelectDJForDate = (dj: DJWithProbability, date: Date) => {
-    setIsSelectingForDate(date)
-  }
-
   const handleSessionChange = () => {
     fetchTodaySession()
     fetchNextBusinessDay()
@@ -364,18 +359,6 @@ export default function HomePage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Gestion du prochain DJ - sous la roue (masqué si pending completion) */}
-            {!winner && !pendingCompletion && (
-              <div className="mt-4 w-full max-w-sm">
-                <NextDJManager
-                  key={refreshKey}
-                  djs={djs}
-                  onSelectDJ={handleSelectDJForDate}
-                  onSessionChange={handleSessionChange}
-                />
-              </div>
-            )}
           </div>
 
           {/* Colonne centrale - DJ du jour + dernière musique */}
