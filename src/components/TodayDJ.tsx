@@ -17,6 +17,8 @@ import {
   Disc3
 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
+import { getCurrentHour, getMockDate, formatDateISO } from '@/lib/dates'
 
 interface TodayDJProps {
   onSessionUpdated?: () => void
@@ -26,6 +28,7 @@ interface TodayDJProps {
 export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProps) {
   const t = useTranslations()
   const locale = useLocale()
+  const searchParams = useSearchParams()
   const [session, setSession] = useState<DailySession | null>(null)
   const [isBusinessDay, setIsBusinessDay] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -35,16 +38,21 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
   const [error, setError] = useState<string | null>(null)
   const [showingNextSession, setShowingNextSession] = useState(false)
 
-  const isAfterNoon = () => new Date().getHours() >= 12
+  const isAfterNoon = () => getCurrentHour() >= 12
+
+  // Get mock date from URL for API calls
+  const getMockDateParam = () => searchParams.get('mockDate') || ''
 
   const fetchTodaySession = async () => {
     try {
-      const response = await fetch('/api/sessions/today')
+      const mockDate = getMockDateParam()
+      const params = mockDate ? `?mockDate=${mockDate}` : ''
+      const response = await fetch(`/api/sessions/today${params}`)
       const data: TodaySessionResponse = await response.json()
 
       // Si après midi et session terminée/annulée, afficher la prochaine session
       if (isAfterNoon() && data.session && (data.session.status === 'skipped' || data.session.status === 'completed')) {
-        const nextResponse = await fetch('/api/sessions/next')
+        const nextResponse = await fetch(`/api/sessions/next${params}`)
         const nextData: NextSessionResponse = await nextResponse.json()
         if (nextData.session && !nextData.isToday) {
           setSession(nextData.session)
@@ -66,7 +74,7 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
 
   useEffect(() => {
     fetchTodaySession()
-  }, [])
+  }, [searchParams])
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
