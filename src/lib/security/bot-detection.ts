@@ -4,6 +4,7 @@
  */
 
 // Known malicious user agents (partial matches)
+// Note: curl/ and wget/ are NOT blocked as they're commonly used for legitimate API testing
 const BLOCKED_USER_AGENTS = [
   'sqlmap',        // SQL injection tool
   'nikto',         // Web scanner
@@ -15,14 +16,8 @@ const BLOCKED_USER_AGENTS = [
   'wpscan',        // WordPress scanner
   'nuclei',        // Vulnerability scanner
   'hydra',         // Password cracker
-  'curl/',         // Basic curl (without custom UA)
-  'wget/',         // Basic wget
-  'python-requests', // Default Python requests
-  'go-http-client', // Default Go HTTP
   'libwww-perl',   // Perl LWP
-  'java/',         // Default Java HTTP
   'scrapy',        // Python scraper
-  'httpclient',    // Generic HTTP client
 ];
 
 // Suspicious path patterns (regex)
