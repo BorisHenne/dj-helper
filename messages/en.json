@@ -118,5 +118,15 @@
     "unmute": "Unmute",
     "keyboardShortcuts": "ESC to close | Arrow keys to navigate",
     "play": "Play"
+  },
+  "pwa": {
+    "installTitle": "Install DJ Rotation",
+    "installDescription": "Add to your home screen for a better experience",
+    "installIOSDescription": "Add to your home screen for quick access",
+    "install": "Install",
+    "later": "Later",
+    "iosStep1": "Tap the Share button",
+    "iosStep2": "Select \"Add to Home Screen\"",
+    "offline": "You're offline"
   }
 }

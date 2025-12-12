@@ -118,5 +118,15 @@
     "unmute": "Rétablir le son",
     "keyboardShortcuts": "ESC pour fermer | Flèches pour naviguer",
     "play": "Lire"
+  },
+  "pwa": {
+    "installTitle": "Installer DJ Rotation",
+    "installDescription": "Ajoutez l'app sur votre écran d'accueil",
+    "installIOSDescription": "Ajoutez l'app sur votre écran d'accueil",
+    "install": "Installer",
+    "later": "Plus tard",
+    "iosStep1": "Appuyez sur le bouton Partager",
+    "iosStep2": "Sélectionnez \"Sur l'écran d'accueil\"",
+    "offline": "Vous êtes hors ligne"
   }
 }
