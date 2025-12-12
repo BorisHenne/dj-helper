@@ -76,5 +76,5 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# Initialize database with Drizzle, seed data, and start
-CMD npx drizzle-kit push && npx tsx prisma/seed.ts && node server.js
+# Initialize database with Drizzle, migrate dates to ISO format, seed data, and start
+CMD npx drizzle-kit push && npx tsx prisma/migrate-dates.ts && npx tsx prisma/seed.ts && node server.js
