@@ -14,7 +14,8 @@ import {
   XCircle,
   AlertCircle,
   ArrowRight,
-  Disc3
+  Disc3,
+  CalendarClock
 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
@@ -37,6 +38,7 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
   const [videoInfo, setVideoInfo] = useState<{ title: string; artist: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showingNextSession, setShowingNextSession] = useState(false)
+  const [isPostponing, setIsPostponing] = useState(false)
 
   const isAfterNoon = () => getCurrentHour() >= 12
 
@@ -132,6 +134,30 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
 
     setError(null)
     onRequestSpin?.(session.id, session.djId, youtubeUrl.trim(), videoInfo)
+  }
+
+  const handlePostpone = async () => {
+    if (!session || isPostponing) return
+
+    setIsPostponing(true)
+    try {
+      const mockDate = getMockDateParam()
+      const response = await fetch(`/api/sessions/${session.id}/postpone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mockDate: mockDate || undefined })
+      })
+
+      if (response.ok) {
+        // Rafraîchir pour afficher la nouvelle session
+        await fetchTodaySession()
+        onSessionUpdated?.()
+      }
+    } catch (error) {
+      console.error('Failed to postpone session:', error)
+    } finally {
+      setIsPostponing(false)
+    }
   }
 
   if (isLoading) {
@@ -303,6 +329,31 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
       {/* YouTube Form - seulement pour la session du jour */}
       {!showingNextSession && (
         <div className="space-y-4">
+          {/* Bouton Reporter */}
+          <button
+            onClick={handlePostpone}
+            disabled={isPostponing}
+            className="w-full py-2 px-4 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl transition-colors border border-white/10 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPostponing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t('session.postponing')}
+              </>
+            ) : (
+              <>
+                <CalendarClock className="w-4 h-4" />
+                {t('session.postponeToNextDay')}
+              </>
+            )}
+          </button>
+
+          <div className="relative flex items-center">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase">ou</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
           <div>
             <label className="block text-sm text-gray-400 mb-2">
               {t('session.addYoutubeLink')}
