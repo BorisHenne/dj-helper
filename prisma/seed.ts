@@ -15,9 +15,29 @@ const defaultDJs = JSON.parse(
   color: string
 }>
 
-async function main() {
-  console.log('Seeding database with default DJ statistics...')
+// Load default history from JSON file
+const defaultHistory = JSON.parse(
+  readFileSync(join(__dirname, 'data', 'default-history.json'), 'utf-8')
+) as Array<{
+  date: string
+  djName: string
+  artist: string
+  title: string
+  youtubeUrl?: string
+}>
 
+// Generate a simple unique ID
+function generateId(): string {
+  const timestamp = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).substring(2, 15)
+  return `c${timestamp}${randomPart}`
+}
+
+async function main() {
+  console.log('🎵 Seeding database...\n')
+
+  // Seed DJs
+  console.log('📀 Seeding DJs...')
   for (const dj of defaultDJs) {
     await prisma.dJ.upsert({
       where: { name: dj.name },
@@ -34,16 +54,54 @@ async function main() {
         isActive: true,
       },
     })
+    console.log(`  ✓ ${dj.name}: ${dj.totalPlays} passages`)
+  }
+  console.log(`\n✅ ${defaultDJs.length} DJs seeded!\n`)
 
-    console.log(`  ✓ ${dj.name}: ${dj.totalPlays} passages, dernier: ${dj.lastPlayedAt}`)
+  // Seed History
+  console.log('🎶 Seeding history...')
+
+  // Check existing entries to avoid duplicates
+  const existingHistory = await prisma.dJHistory.findMany({
+    select: { djName: true, title: true, playedAt: true }
+  })
+
+  const existingKeys = new Set(
+    existingHistory.map(h => `${h.djName}-${h.title}-${h.playedAt.toISOString().split('T')[0]}`)
+  )
+
+  let created = 0
+  let skipped = 0
+
+  for (const entry of defaultHistory) {
+    const key = `${entry.djName}-${entry.title}-${entry.date}`
+
+    if (existingKeys.has(key)) {
+      skipped++
+      continue
+    }
+
+    await prisma.dJHistory.create({
+      data: {
+        id: generateId(),
+        djName: entry.djName,
+        artist: entry.artist,
+        title: entry.title,
+        youtubeUrl: entry.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(entry.artist + ' ' + entry.title)}`,
+        playedAt: new Date(entry.date),
+      },
+    })
+    console.log(`  ✓ ${entry.date}: ${entry.djName} - ${entry.artist} - ${entry.title}`)
+    created++
   }
 
-  console.log(`\nSeeded ${defaultDJs.length} DJs successfully!`)
+  console.log(`\n✅ History: ${created} created, ${skipped} skipped (already exist)`)
+  console.log('\n🎉 Database seeding complete!')
 }
 
 main()
   .catch((e) => {
-    console.error('Error seeding database:', e)
+    console.error('❌ Error seeding database:', e)
     process.exit(1)
   })
   .finally(async () => {
