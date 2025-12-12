@@ -28,6 +28,36 @@ export default function LatestMusic() {
     fetchLatest()
   }, [])
 
+  // Fetch video ID from search API when URL doesn't contain a valid ID
+  useEffect(() => {
+    const fetchVideoIdFromSearch = async () => {
+      if (!latest) return
+
+      const urlVideoId = getYoutubeVideoId(latest.youtubeUrl)
+      if (urlVideoId) return // Already have a valid ID from URL
+
+      setIsSearchingVideo(true)
+      try {
+        const response = await fetch(
+          `/api/youtube/search?artist=${encodeURIComponent(latest.artist)}&title=${encodeURIComponent(latest.title)}`
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.videoId) {
+            setSearchedVideoId(data.videoId)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch video ID:', error)
+      } finally {
+        setIsSearchingVideo(false)
+      }
+    }
+
+    fetchVideoIdFromSearch()
+  }, [latest])
+
   const getYoutubeVideoId = (url: string) => {
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
     const match = url.match(regExp)

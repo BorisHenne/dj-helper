@@ -20,7 +20,10 @@
     "actions": "Actions",
     "name": "Name",
     "avatar": "Avatar",
-    "color": "Color"
+    "color": "Color",
+    "passages": "sessions",
+    "daysAgo": "d ago",
+    "never": "Never"
   },
   "header": {
     "title": "DJ Rotation",
@@ -69,7 +72,8 @@
     "found": "found",
     "noResults": "No results",
     "tryAnotherSearch": "Try another search",
-    "searchOnYoutube": "Search on YouTube"
+    "searchOnYoutube": "Search on YouTube",
+    "searchingVideo": "Searching for video..."
   },
   "user": {
     "title": "Management",

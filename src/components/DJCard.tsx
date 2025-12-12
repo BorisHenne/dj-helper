@@ -17,7 +17,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
   const locale = useLocale()
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return t('admin.never')
+    if (!dateStr) return t('common.never')
     const date = new Date(dateStr)
     return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
@@ -118,7 +118,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
         <div className="flex items-center gap-3 text-xs text-gray-400">
           <span className="flex items-center gap-1">
             <Hash className="w-3 h-3" />
-            {dj.totalPlays} {t('admin.passages')}
+            {dj.totalPlays} {t('common.passages')}
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
@@ -136,7 +136,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
           {dj.probability.toFixed(1)}%
         </div>
         <div className="text-xs text-gray-500">
-          {dj.daysSinceLastPlay}{t('admin.daysAgo')}
+          {dj.daysSinceLastPlay}{t('common.daysAgo')}
         </div>
       </div>
 
