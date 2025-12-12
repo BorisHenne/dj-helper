@@ -38,13 +38,13 @@ export default function Header() {
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">{t('common.home')}</span>
             </NavLink>
-            <NavLink href="/admin/history" active={pathname === '/admin/history'}>
+            <NavLink href="/user/history" active={pathname === '/user/history'}>
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">{t('common.history')}</span>
             </NavLink>
-            <NavLink href="/admin" active={pathname === '/admin'}>
+            <NavLink href="/user" active={pathname === '/user'}>
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('common.admin')}</span>
+              <span className="hidden sm:inline">{t('common.user')}</span>
             </NavLink>
             <LanguageSwitcher />
           </nav>

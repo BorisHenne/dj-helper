@@ -42,14 +42,6 @@ export interface SelectionResponse {
   allProbabilities: DJWithProbability[]
 }
 
-export interface ImportResult {
-  message: string
-  created: number
-  updated: number
-  skipped: number
-  errors: string[]
-}
-
 export interface DJHistory {
   id: string
   djName: string

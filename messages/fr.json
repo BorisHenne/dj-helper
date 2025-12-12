@@ -2,7 +2,7 @@
   "common": {
     "home": "Accueil",
     "history": "Historique",
-    "admin": "Admin",
+    "user": "Gestion",
     "add": "Ajouter",
     "edit": "Modifier",
     "delete": "Supprimer",
@@ -42,7 +42,7 @@
     "viewHistory": "Voir l'historique",
     "probabilities": "Probabilités",
     "noDjsYet": "Aucun DJ pour le moment",
-    "addParticipantsInAdmin": "Ajoutez des participants dans l'admin",
+    "addParticipantsInAdmin": "Ajoutez des participants dans la page Gestion",
     "noDjActive": "Aucun DJ actif pour le moment.",
     "djOfTheDayIs": "Le DJ du jour est...",
     "probability": "Probabilité",
@@ -71,8 +71,8 @@
     "tryAnotherSearch": "Essayez une autre recherche",
     "searchOnYoutube": "Rechercher sur YouTube"
   },
-  "admin": {
-    "title": "Administration",
+  "user": {
+    "title": "Gestion",
     "subtitle": "Gérez les participants et les paramètres de l'application",
     "addDj": "Ajouter un DJ",
     "editDj": "Modifier le DJ",
@@ -88,23 +88,14 @@
     "settings": "Paramètres",
     "weightLastPlayed": "Poids : Dernier passage",
     "weightTotalPlays": "Poids : Nombre de passages",
-    "importExport": "Import/Export",
-    "downloadTemplate": "Télécharger le modèle",
-    "importFile": "Importer un fichier",
     "participants": "Participants",
-    "importExcel": "Import Excel",
-    "template": "Template",
     "noParticipants": "Aucun participant",
-    "addDjsOrImport": "Ajoutez des DJs manuellement ou importez un fichier Excel",
+    "addParticipantsHint": "Cliquez sur \"Ajouter\" pour créer un nouveau participant",
     "deleteConfirm": "Supprimer {name} définitivement ?",
     "weightSeniority": "Poids de l'ancienneté",
     "weightSeniorityDescription": "Plus le poids est élevé, plus les DJs qui n'ont pas joué depuis longtemps seront favorisés",
     "weightPlayCount": "Poids du nb de passages",
-    "weightPlayCountDescription": "Plus le poids est élevé, plus les DJs avec peu de passages seront favorisés",
-    "excelImportFormat": "Format d'import Excel",
-    "columnA": "Colonne A : Nom du DJ",
-    "columnB": "Colonne B : Nombre de passages",
-    "columnC": "Colonne C : Date du dernier passage"
+    "weightPlayCountDescription": "Plus le poids est élevé, plus les DJs avec peu de passages seront favorisés"
   },
   "validation": {
     "required": "Ce champ est requis",
