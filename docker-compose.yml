@@ -3,8 +3,6 @@
 # ============================
 # Compatible avec UGOS (Ugreen NAS)
 
-version: '3.8'
-
 services:
   dj-rotation:
     build:
