@@ -32,11 +32,16 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 
+# Image metadata
+LABEL org.opencontainers.image.title="DJ Helper"
+LABEL org.opencontainers.image.description="DJ Rotation App"
+LABEL org.opencontainers.image.source="https://github.com/BorisHenne/dj-helper"
+
 # Install OpenSSL for Prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user with home directory
 RUN addgroup --system --gid 1001 nodejs

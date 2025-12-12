@@ -2,6 +2,10 @@
 # DJ Rotation App - Docker Compose
 # ============================
 # Compatible avec UGOS (Ugreen NAS)
+#
+# Build: docker compose build --pull
+# Run:   docker compose up -d
+# Clean dangling images: docker image prune -f
 
 services:
   dj-rotation:
@@ -9,6 +13,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Remove intermediate containers after build
+      args:
+        BUILDKIT_INLINE_CACHE: "1"
     container_name: dj-rotation
     restart: unless-stopped
     ports:
