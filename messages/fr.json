@@ -20,7 +20,10 @@
     "actions": "Actions",
     "name": "Nom",
     "avatar": "Avatar",
-    "color": "Couleur"
+    "color": "Couleur",
+    "passages": "passages",
+    "daysAgo": "j",
+    "never": "Jamais"
   },
   "header": {
     "title": "DJ Rotation",
