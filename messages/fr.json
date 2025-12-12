@@ -14,7 +14,13 @@
     "search": "Rechercher",
     "noData": "Aucune donnée",
     "error": "Erreur",
-    "success": "Succès"
+    "success": "Succès",
+    "restart": "Recommencer",
+    "confirmed": "C'est validé !",
+    "actions": "Actions",
+    "name": "Nom",
+    "avatar": "Avatar",
+    "color": "Couleur"
   },
   "header": {
     "title": "DJ Rotation",
@@ -23,14 +29,26 @@
   "home": {
     "title": "DJ du Jour",
     "subtitle": "Qui animera le blindtest ?",
-    "spinWheel": "Lancer la Roue",
+    "whoWillBeDj": "Qui sera le DJ",
+    "ofTheDay": "du jour ?",
+    "spinDescription": "Tournez la roue pour désigner le prochain DJ du blindtest !",
+    "spinWheel": "Tourner la roue !",
     "spinning": "En cours...",
     "selectedDj": "DJ Sélectionné",
     "activeDjs": "DJs actifs",
     "totalBlindtests": "Blindtests total",
     "lastMusic": "Dernière Musique",
     "noMusicYet": "Aucune musique jouée",
-    "viewHistory": "Voir l'historique"
+    "viewHistory": "Voir l'historique",
+    "probabilities": "Probabilités",
+    "noDjsYet": "Aucun DJ pour le moment",
+    "addParticipantsInAdmin": "Ajoutez des participants dans l'admin",
+    "noDjActive": "Aucun DJ actif pour le moment.",
+    "djOfTheDayIs": "Le DJ du jour est...",
+    "probability": "Probabilité",
+    "confirmDjOfDay": "Confirmer que {name} {avatar} est le DJ du jour ?",
+    "confirmDescription": "Cela enregistrera le passage et mettra à jour les probabilités",
+    "latestMusic": "Dernière musique"
   },
   "history": {
     "title": "Historique des musiques",
@@ -46,11 +64,16 @@
     "autoFetch": "Auto",
     "fetchingInfo": "Récupération des infos YouTube...",
     "watchOnYoutube": "Voir sur YouTube",
-    "play": "Lire"
+    "play": "Lire",
+    "selectDj": "Sélectionner un DJ",
+    "found": "trouvées",
+    "noResults": "Aucun résultat",
+    "tryAnotherSearch": "Essayez une autre recherche",
+    "searchOnYoutube": "Rechercher sur YouTube"
   },
   "admin": {
-    "title": "Gestion des DJs",
-    "subtitle": "Gérez les DJs et les paramètres",
+    "title": "Administration",
+    "subtitle": "Gérez les participants et les paramètres de l'application",
     "addDj": "Ajouter un DJ",
     "editDj": "Modifier le DJ",
     "djList": "Liste des DJs",
@@ -67,7 +90,21 @@
     "weightTotalPlays": "Poids : Nombre de passages",
     "importExport": "Import/Export",
     "downloadTemplate": "Télécharger le modèle",
-    "importFile": "Importer un fichier"
+    "importFile": "Importer un fichier",
+    "participants": "Participants",
+    "importExcel": "Import Excel",
+    "template": "Template",
+    "noParticipants": "Aucun participant",
+    "addDjsOrImport": "Ajoutez des DJs manuellement ou importez un fichier Excel",
+    "deleteConfirm": "Supprimer {name} définitivement ?",
+    "weightSeniority": "Poids de l'ancienneté",
+    "weightSeniorityDescription": "Plus le poids est élevé, plus les DJs qui n'ont pas joué depuis longtemps seront favorisés",
+    "weightPlayCount": "Poids du nb de passages",
+    "weightPlayCountDescription": "Plus le poids est élevé, plus les DJs avec peu de passages seront favorisés",
+    "excelImportFormat": "Format d'import Excel",
+    "columnA": "Colonne A : Nom du DJ",
+    "columnB": "Colonne B : Nombre de passages",
+    "columnC": "Colonne C : Date du dernier passage"
   },
   "validation": {
     "required": "Ce champ est requis",
@@ -78,5 +115,13 @@
     "en": "Anglais",
     "fr": "Français",
     "switchTo": "Changer de langue"
+  },
+  "player": {
+    "previous": "Précédent (Flèche gauche)",
+    "next": "Suivant (Flèche droite)",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "keyboardShortcuts": "ESC pour fermer | Flèches pour naviguer",
+    "play": "Lire"
   }
 }

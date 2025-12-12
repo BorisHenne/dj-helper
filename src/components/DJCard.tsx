@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { DJWithProbability } from '@/types'
 import { Crown, Calendar, Hash } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface DJCardProps {
   dj: DJWithProbability
@@ -11,10 +12,13 @@ interface DJCardProps {
 }
 
 export default function DJCard({ dj, rank, isWinner }: DJCardProps) {
+  const t = useTranslations()
+  const locale = useLocale()
+
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Jamais'
+    if (!dateStr) return t('admin.never')
     const date = new Date(dateStr)
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'short',
     })
@@ -54,7 +58,7 @@ export default function DJCard({ dj, rank, isWinner }: DJCardProps) {
         <div className="flex items-center gap-3 text-xs text-gray-400">
           <span className="flex items-center gap-1">
             <Hash className="w-3 h-3" />
-            {dj.totalPlays} passages
+            {dj.totalPlays} {t('admin.passages')}
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
@@ -72,7 +76,7 @@ export default function DJCard({ dj, rank, isWinner }: DJCardProps) {
           {dj.probability.toFixed(1)}%
         </div>
         <div className="text-xs text-gray-500">
-          {dj.daysSinceLastPlay}j
+          {dj.daysSinceLastPlay}{t('admin.daysAgo')}
         </div>
       </div>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface YouTubePlayerProps {
   videoId: string
@@ -27,6 +28,7 @@ export default function YouTubePlayer({
   hasNext = false,
   hasPrevious = false,
 }: YouTubePlayerProps) {
+  const t = useTranslations()
   const [isMuted, setIsMuted] = useState(false)
 
   // Close on Escape key
@@ -101,7 +103,7 @@ export default function YouTubePlayer({
                     onClick={onPrevious}
                     disabled={!hasPrevious}
                     className="p-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Previous (Left arrow)"
+                    title={t('player.previous')}
                   >
                     <SkipBack className="w-5 h-5" />
                   </button>
@@ -110,7 +112,7 @@ export default function YouTubePlayer({
                   <button
                     onClick={() => setIsMuted(!isMuted)}
                     className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    title={isMuted ? 'Unmute' : 'Mute'}
+                    title={isMuted ? t('player.unmute') : t('player.mute')}
                   >
                     {isMuted ? (
                       <VolumeX className="w-5 h-5" />
@@ -124,7 +126,7 @@ export default function YouTubePlayer({
                     onClick={onNext}
                     disabled={!hasNext}
                     className="p-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Next (Right arrow)"
+                    title={t('player.next')}
                   >
                     <SkipForward className="w-5 h-5" />
                   </button>
@@ -133,7 +135,7 @@ export default function YouTubePlayer({
 
               {/* Keyboard shortcuts hint */}
               <div className="mt-2 text-xs text-gray-500 text-center">
-                ESC to close | Arrow keys to navigate
+                {t('player.keyboardShortcuts')}
               </div>
             </div>
           </motion.div>

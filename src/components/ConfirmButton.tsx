@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Check, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface ConfirmButtonProps {
   winner: { id: string; name: string; avatar: string | null }
@@ -14,6 +15,8 @@ export default function ConfirmButton({
   onConfirm,
   isLoading,
 }: ConfirmButtonProps) {
+  const t = useTranslations()
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -21,7 +24,7 @@ export default function ConfirmButton({
       className="glass rounded-xl p-6 text-center"
     >
       <p className="text-gray-300 mb-4">
-        Confirmer que <strong className="text-neon-pink">{winner.name}</strong> {winner.avatar} est le DJ du jour ?
+        {t('home.confirmDjOfDay', { name: winner.name, avatar: winner.avatar || '' })}
       </p>
 
       <div className="flex gap-3 justify-center">
@@ -37,12 +40,12 @@ export default function ConfirmButton({
           ) : (
             <Check className="w-5 h-5" />
           )}
-          C'est validé !
+          {t('common.confirmed')}
         </motion.button>
       </div>
 
       <p className="text-xs text-gray-500 mt-3">
-        Cela enregistrera le passage et mettra à jour les probabilités
+        {t('home.confirmDescription')}
       </p>
     </motion.div>
   )
