@@ -20,7 +20,114 @@ import {
   Play,
   Search,
   ChevronDown,
+  Calendar,
+  User,
 } from 'lucide-react'
+
+// Mobile Card Component for history entries
+function MobileHistoryCard({
+  entry,
+  index,
+  videoId,
+  isLoading,
+  onPlay,
+  onEdit,
+  onDelete,
+  onFetchVideo,
+  formatDate,
+  t,
+  locale,
+}: {
+  entry: DJHistory
+  index: number
+  videoId: string | null
+  isLoading: boolean
+  onPlay: (index: number) => void
+  onEdit: (entry: DJHistory) => void
+  onDelete: (id: string, title: string) => void
+  onFetchVideo: (id: string, artist: string, title: string) => void
+  formatDate: (date: string) => string
+  t: (key: string) => string
+  locale: string
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="history-mobile-card"
+    >
+      <div className="flex gap-3">
+        {/* Thumbnail */}
+        <div className="flex-shrink-0">
+          {videoId ? (
+            <button
+              onClick={() => onPlay(index)}
+              className="relative group block w-20 h-14 rounded-lg overflow-hidden bg-black"
+            >
+              <img
+                src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
+                alt={entry.title}
+                className="w-full h-full object-cover opacity-80 group-active:opacity-100"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Play className="w-6 h-6 text-white" />
+              </div>
+            </button>
+          ) : isLoading ? (
+            <div className="w-20 h-14 rounded-lg bg-white/5 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-neon-blue animate-spin" />
+            </div>
+          ) : (
+            <button
+              onClick={() => onFetchVideo(entry.id, entry.artist, entry.title)}
+              className="w-20 h-14 rounded-lg bg-white/5 flex items-center justify-center active:bg-white/10"
+            >
+              <Music className="w-5 h-5 text-gray-500" />
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <button
+            onClick={() => onPlay(index)}
+            className="text-left w-full"
+          >
+            <h3 className="font-medium text-white truncate">{entry.title}</h3>
+            <p className="text-sm text-neon-pink truncate">{entry.artist}</p>
+          </button>
+          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {entry.djName}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {formatDate(entry.playedAt)}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => onEdit(entry)}
+            className="p-2 text-gray-400 active:text-white active:bg-white/10 rounded-lg tap-target"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(entry.id, entry.title)}
+            className="p-2 text-gray-400 active:text-red-500 active:bg-red-500/10 rounded-lg tap-target"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 export default function HistoryPage() {
   const t = useTranslations()
@@ -34,6 +141,15 @@ export default function HistoryPage() {
   const [playerOpen, setPlayerOpen] = useState(false)
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Cache for video IDs fetched from search API
   const [videoIdCache, setVideoIdCache] = useState<Record<string, string>>({})
@@ -317,7 +433,7 @@ export default function HistoryPage() {
   const currentVideoId = currentVideo ? getEntryVideoId(currentVideo) : null
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-safe">
       <Header />
 
       {/* YouTube Player Modal */}
@@ -335,16 +451,16 @@ export default function HistoryPage() {
         />
       )}
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             <span className="text-glow-sm text-neon-pink">{t('history.title')}</span>
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm sm:text-base">
             {t('history.subtitle')}
           </p>
         </motion.div>
@@ -352,53 +468,54 @@ export default function HistoryPage() {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass rounded-2xl p-6"
+          className="glass rounded-2xl p-4 sm:p-6"
         >
           {/* Header avec actions */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <Music className="w-5 h-5 text-neon-blue" />
-              {t('common.history')} ({history.length} {t('history.entries')})
+              <span className="hidden sm:inline">{t('common.history')}</span>
+              <span className="text-sm font-normal text-gray-400">
+                ({history.length})
+              </span>
             </h2>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
               <motion.button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
+                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2 tap-target"
                 whileTap={{ scale: 0.95 }}
               >
                 <Plus className="w-4 h-4" />
-                {t('common.add')}
+                <span className="hidden sm:inline">{t('common.add')}</span>
               </motion.button>
 
               <motion.button
                 onClick={fetchHistory}
-                className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
+                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2 tap-target"
                 whileTap={{ scale: 0.95 }}
               >
                 <RefreshCw className="w-4 h-4" />
-                {t('common.refresh')}
+                <span className="hidden sm:inline">{t('common.refresh')}</span>
               </motion.button>
             </div>
           </div>
 
           {/* Search bar */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`${t('common.search')} DJ, ${t('history.artist').toLowerCase()}, ${t('history.songTitle').toLowerCase()}...`}
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-neon-blue focus:outline-none transition-colors"
+                placeholder={`${t('common.search')}...`}
+                className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-neon-blue focus:outline-none transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 active:text-white p-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -419,9 +536,9 @@ export default function HistoryPage() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 onSubmit={handleAddEntry}
-                className="mb-6 p-4 bg-white/5 rounded-xl"
+                className="mb-4 sm:mb-6 p-4 bg-white/5 rounded-xl"
               >
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* DJ Dropdown */}
                   <div>
                     <label className="text-sm text-gray-400 mb-1 block">{t('history.djName')}</label>
@@ -459,7 +576,7 @@ export default function HistoryPage() {
                         type="button"
                         onClick={() => fetchYouTubeInfo(newEntry.youtubeUrl)}
                         disabled={isFetchingYouTube || !newEntry.youtubeUrl}
-                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2"
+                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2 tap-target"
                         title={t('history.autoFetch')}
                       >
                         {isFetchingYouTube ? (
@@ -510,7 +627,7 @@ export default function HistoryPage() {
                       type="button"
                       onClick={searchYouTube}
                       disabled={!newEntry.artist && !newEntry.title}
-                      className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2 tap-target"
                       title={t('history.searchOnYoutube')}
                     >
                       <Youtube className="w-4 h-4" />
@@ -534,13 +651,13 @@ export default function HistoryPage() {
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="px-4 py-2 text-gray-400 hover:text-white"
+                    className="px-4 py-2 text-gray-400 hover:text-white tap-target"
                   >
                     {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-green-500 rounded-lg font-bold"
+                    className="px-4 py-2 bg-green-500 rounded-lg font-bold tap-target"
                   >
                     {t('common.add')}
                   </button>
@@ -549,11 +666,11 @@ export default function HistoryPage() {
             )}
           </AnimatePresence>
 
-          {/* Table de l'historique */}
+          {/* History List - Mobile Cards or Desktop Table */}
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 bg-white/5 rounded-lg animate-pulse" />
+                <div key={i} className="h-16 skeleton rounded-lg" />
               ))}
             </div>
           ) : filteredHistory.length === 0 ? (
@@ -562,7 +679,28 @@ export default function HistoryPage() {
               <p className="mb-2">{searchQuery ? t('history.noResults') : t('history.noEntries')}</p>
               <p className="text-sm">{searchQuery ? t('history.tryAnotherSearch') : t('history.addMusic')}</p>
             </div>
+          ) : isMobile ? (
+            // Mobile: Card view
+            <div className="space-y-0">
+              {filteredHistory.map((entry, index) => (
+                <MobileHistoryCard
+                  key={entry.id}
+                  entry={entry}
+                  index={index}
+                  videoId={getEntryVideoId(entry)}
+                  isLoading={loadingVideoIds.has(entry.id)}
+                  onPlay={playVideo}
+                  onEdit={startEdit}
+                  onDelete={handleDeleteEntry}
+                  onFetchVideo={fetchVideoIdFromSearch}
+                  formatDate={formatDate}
+                  t={t}
+                  locale={locale}
+                />
+              ))}
+            </div>
           ) : (
+            // Desktop: Table view
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -668,7 +806,7 @@ export default function HistoryPage() {
                           <td className="py-2 px-2">
                             {(() => {
                               const videoId = getEntryVideoId(entry)
-                              const isLoading = loadingVideoIds.has(entry.id)
+                              const isLoadingVideo = loadingVideoIds.has(entry.id)
 
                               if (videoId) {
                                 return (
@@ -688,7 +826,7 @@ export default function HistoryPage() {
                                 )
                               }
 
-                              if (isLoading) {
+                              if (isLoadingVideo) {
                                 return (
                                   <div className="w-16 h-10 rounded bg-white/5 flex items-center justify-center">
                                     <Loader2 className="w-4 h-4 text-neon-blue animate-spin" />

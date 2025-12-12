@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { DJWithProbability } from '@/types'
 import { useTranslations } from 'next-intl'
@@ -22,9 +22,31 @@ export default function SpinningWheel({
   const wheelRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
   const [winner, setWinner] = useState<DJWithProbability | null>(null)
+  const [wheelSize, setWheelSize] = useState(320)
 
-  const spinWheel = async () => {
+  // Calculate wheel size based on viewport
+  useEffect(() => {
+    const calculateSize = () => {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      // Use smaller dimension, max 384px, min 260px
+      const maxSize = Math.min(vw * 0.85, vh * 0.45, 384)
+      const size = Math.max(260, maxSize)
+      setWheelSize(size)
+    }
+
+    calculateSize()
+    window.addEventListener('resize', calculateSize)
+    return () => window.removeEventListener('resize', calculateSize)
+  }, [])
+
+  const spinWheel = useCallback(async () => {
     if (isSpinning || djs.length === 0) return
+
+    // Haptic feedback on mobile if available
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
 
     setIsSpinning(true)
     setWinner(null)
@@ -45,13 +67,25 @@ export default function SpinningWheel({
 
     setRotation(finalRotation)
 
+    // Haptic feedback during spin
+    if (navigator.vibrate) {
+      // Create a pattern: vibrate during spin
+      const pattern = Array(10).fill([30, 100]).flat()
+      navigator.vibrate(pattern)
+    }
+
     // Attendre la fin de l'animation
     setTimeout(() => {
       setWinner(selectedDJ)
       setIsSpinning(false)
       onSpinComplete(selectedDJ)
+
+      // Final haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100])
+      }
     }, 5000)
-  }
+  }, [isSpinning, djs, rotation, setIsSpinning, onSpinComplete])
 
   if (djs.length === 0) {
     return (
@@ -66,20 +100,26 @@ export default function SpinningWheel({
   }
 
   const segmentAngle = 360 / djs.length
+  // Calculate label radius based on wheel size
+  const labelRadius = wheelSize * 0.31
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-4 sm:gap-8 touch-manipulation">
       {/* Indicateur / Flèche */}
       <div className="relative">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[30px] border-l-transparent border-r-transparent border-t-neon-yellow drop-shadow-[0_0_10px_#fff700]" />
+        <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 z-10">
+          <div
+            className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[22px] sm:border-l-[20px] sm:border-r-[20px] sm:border-t-[30px] border-l-transparent border-r-transparent border-t-neon-yellow drop-shadow-[0_0_10px_#fff700]"
+          />
         </div>
 
-        {/* La Roue */}
+        {/* La Roue - Responsive sizing */}
         <motion.div
           ref={wheelRef}
-          className="relative w-80 h-80 md:w-96 md:h-96 rounded-full shadow-2xl"
+          className="relative rounded-full shadow-2xl no-select"
           style={{
+            width: wheelSize,
+            height: wheelSize,
             background: 'conic-gradient(from 0deg, ' +
               djs.map((dj, i) =>
                 `${dj.color || '#ff6ec7'} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`
@@ -91,25 +131,35 @@ export default function SpinningWheel({
           {/* Labels des DJs */}
           {djs.map((dj, index) => {
             const angle = index * segmentAngle + segmentAngle / 2 - 90
-            const radius = 120 // Distance du centre
 
             return (
               <div
                 key={dj.id}
-                className="absolute text-center"
+                className="absolute text-center no-select"
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `
                     translate(-50%, -50%)
                     rotate(${angle}deg)
-                    translateY(-${radius}px)
+                    translateY(-${labelRadius}px)
                     rotate(${-angle}deg)
                   `,
                 }}
               >
-                <span className="text-2xl drop-shadow-lg">{dj.avatar || '🎧'}</span>
-                <p className="text-xs font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] mt-1 max-w-[60px] truncate">
+                <span
+                  className="drop-shadow-lg"
+                  style={{ fontSize: Math.max(wheelSize * 0.06, 18) }}
+                >
+                  {dj.avatar || '🎧'}
+                </span>
+                <p
+                  className="font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] mt-0.5 truncate"
+                  style={{
+                    fontSize: Math.max(wheelSize * 0.028, 10),
+                    maxWidth: Math.max(wheelSize * 0.15, 50)
+                  }}
+                >
                   {dj.name}
                 </p>
               </div>
@@ -117,21 +167,28 @@ export default function SpinningWheel({
           })}
 
           {/* Centre de la roue */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-gray-900 border-4 border-white flex items-center justify-center shadow-lg">
-            <span className="text-3xl">🎶</span>
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-900 border-4 border-white flex items-center justify-center shadow-lg"
+            style={{
+              width: wheelSize * 0.21,
+              height: wheelSize * 0.21,
+            }}
+          >
+            <span style={{ fontSize: wheelSize * 0.08 }}>🎶</span>
           </div>
         </motion.div>
       </div>
 
-      {/* Bouton Spin */}
+      {/* Bouton Spin - Touch optimized */}
       <motion.button
         onClick={spinWheel}
         disabled={isSpinning}
         className={`
-          btn-neon px-8 py-4 rounded-full text-xl font-bold uppercase tracking-wider
+          btn-neon px-6 py-3 sm:px-8 sm:py-4 rounded-full text-lg sm:text-xl font-bold uppercase tracking-wider
+          tap-target min-h-[52px]
           ${isSpinning
             ? 'bg-gray-600 cursor-not-allowed'
-            : 'bg-gradient-to-r from-neon-pink to-neon-blue hover:from-neon-blue hover:to-neon-pink'
+            : 'bg-gradient-to-r from-neon-pink to-neon-blue hover:from-neon-blue hover:to-neon-pink active:scale-95'
           }
           transition-all duration-300 shadow-lg
         `}
@@ -161,16 +218,16 @@ export default function SpinningWheel({
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="winner-animation glass rounded-2xl p-6 text-center"
+          className="winner-animation glass rounded-2xl p-4 sm:p-6 text-center w-full max-w-sm"
         >
-          <p className="text-neon-yellow text-sm uppercase tracking-wider mb-2">
+          <p className="text-neon-yellow text-xs sm:text-sm uppercase tracking-wider mb-2">
             {t('home.djOfTheDayIs')}
           </p>
-          <div className="text-6xl mb-2">{winner.avatar || '🎧'}</div>
-          <h2 className="text-3xl font-bold text-glow text-neon-pink">
+          <div className="text-5xl sm:text-6xl mb-2">{winner.avatar || '🎧'}</div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-glow text-neon-pink">
             {winner.name}
           </h2>
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-gray-400 text-xs sm:text-sm mt-2">
             {t('home.probability')}: {winner.probability.toFixed(1)}%
           </p>
         </motion.div>
