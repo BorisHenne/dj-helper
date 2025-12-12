@@ -42,7 +42,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
           {rank === 0 ? (
             <Crown className="w-4 h-4 text-neon-yellow mx-auto" />
           ) : (
-            <span className="text-gray-500 text-xs font-bold">#{rank + 1}</span>
+            <span className="text-white/70 text-xs font-bold">#{rank + 1}</span>
           )}
         </div>
 
@@ -57,7 +57,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
         {/* Nom */}
         <div className="flex-grow min-w-0">
           <span className="font-medium text-sm text-white truncate block">{dj.name}</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-white/70">
             {dj.totalPlays} sess. · {formatDate(dj.lastPlayedAt)}
           </span>
         </div>
@@ -100,7 +100,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
         {rank === 0 ? (
           <Crown className="w-6 h-6 text-neon-yellow mx-auto" />
         ) : (
-          <span className="text-gray-500 font-bold">#{rank + 1}</span>
+          <span className="text-white/70 font-bold">#{rank + 1}</span>
         )}
       </div>
 
@@ -115,7 +115,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
       {/* Info */}
       <div className="flex-grow min-w-0">
         <h3 className="font-bold text-white truncate">{dj.name}</h3>
-        <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="flex items-center gap-3 text-xs text-white/70">
           <span className="flex items-center gap-1">
             <Hash className="w-3 h-3" />
             {dj.totalPlays} {t('common.passages')}
@@ -135,7 +135,7 @@ export default function DJCard({ dj, rank, isWinner, compact }: DJCardProps) {
         >
           {dj.probability.toFixed(1)}%
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-white/70">
           {dj.daysSinceLastPlay}{t('common.daysAgo')}
         </div>
       </div>
