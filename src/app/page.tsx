@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
@@ -16,6 +16,13 @@ import { useTranslations, useLocale } from 'next-intl'
 
 // Import dynamique de react-confetti pour éviter les erreurs SSR
 const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
+
+// Infos YouTube temporaires pour le flow de completion
+interface PendingCompletion {
+  sessionId: string
+  youtubeUrl: string
+  videoInfo: { title: string; artist: string } | null
+}
 
 export default function HomePage() {
   const t = useTranslations()
@@ -33,6 +40,12 @@ export default function HomePage() {
   const [nextBusinessDay, setNextBusinessDay] = useState<Date | null>(null)
   const [isSelectingForDate, setIsSelectingForDate] = useState<Date | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Pending completion (quand le DJ du jour lance la roue)
+  const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null)
+
+  // Ref pour la roue
+  const wheelRef = useRef<HTMLDivElement>(null)
 
   const fetchProbabilities = useCallback(async () => {
     try {
@@ -91,44 +104,95 @@ export default function HomePage() {
 
     setIsConfirming(true)
     try {
-      // Déterminer la date pour la session
-      const sessionDate = isSelectingForDate || nextBusinessDay || new Date()
-      const dateStr = sessionDate.toISOString().split('T')[0]
-
-      // Créer la session pour le prochain jour ouvrable
-      const sessionResponse = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          djId: winner.id,
-          djName: winner.name,
-          date: dateStr
-        }),
-      })
-
-      if (!sessionResponse.ok) {
-        const error = await sessionResponse.json()
-        // Si une session existe déjà, mettre à jour au lieu de créer
-        if (error.session) {
-          await fetch(`/api/sessions/${error.session.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              djId: winner.id,
-              djName: winner.name
-            }),
+      // Si on a une completion en attente (DJ du jour qui a entré son lien)
+      if (pendingCompletion) {
+        // 1. Compléter la session actuelle avec le lien YouTube
+        await fetch(`/api/sessions/${pendingCompletion.sessionId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            youtubeUrl: pendingCompletion.youtubeUrl,
+            title: pendingCompletion.videoInfo?.title || '',
+            artist: pendingCompletion.videoInfo?.artist || ''
           })
-        }
-      }
+        })
 
-      // Enregistrer le passage du DJ
-      await fetch(`/api/djs/${winner.id}/play`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          notes: `Blindtest du ${sessionDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}`
-        }),
-      })
+        // 2. Créer la nouvelle session pour le prochain jour ouvrable
+        const nextDate = nextBusinessDay || new Date()
+        const dateStr = nextDate.toISOString().split('T')[0]
+
+        const sessionResponse = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            djId: winner.id,
+            djName: winner.name,
+            date: dateStr
+          }),
+        })
+
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json()
+          if (error.session) {
+            await fetch(`/api/sessions/${error.session.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                djId: winner.id,
+                djName: winner.name
+              }),
+            })
+          }
+        }
+
+        // 3. Enregistrer le passage du nouveau DJ
+        await fetch(`/api/djs/${winner.id}/play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            notes: `Blindtest du ${nextDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}`
+          }),
+        })
+
+        // Reset pending completion
+        setPendingCompletion(null)
+      } else {
+        // Flow normal: créer une session pour la date sélectionnée
+        const sessionDate = isSelectingForDate || nextBusinessDay || new Date()
+        const dateStr = sessionDate.toISOString().split('T')[0]
+
+        const sessionResponse = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            djId: winner.id,
+            djName: winner.name,
+            date: dateStr
+          }),
+        })
+
+        if (!sessionResponse.ok) {
+          const error = await sessionResponse.json()
+          if (error.session) {
+            await fetch(`/api/sessions/${error.session.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                djId: winner.id,
+                djName: winner.name
+              }),
+            })
+          }
+        }
+
+        await fetch(`/api/djs/${winner.id}/play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            notes: `Blindtest du ${sessionDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}`
+          }),
+        })
+      }
 
       // Rafraîchir les données
       await fetchProbabilities()
@@ -147,18 +211,32 @@ export default function HomePage() {
   const handleReset = () => {
     setWinner(null)
     setIsSelectingForDate(null)
+    setPendingCompletion(null)
     fetchProbabilities()
   }
 
   const handleSelectDJForDate = (dj: DJWithProbability, date: Date) => {
     setIsSelectingForDate(date)
-    // Trigger the wheel to spin
   }
 
   const handleSessionChange = () => {
     fetchTodaySession()
     fetchNextBusinessDay()
     setRefreshKey(prev => prev + 1)
+  }
+
+  // Callback quand le DJ du jour demande à lancer la roue
+  const handleRequestSpin = (sessionId: string, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => {
+    // Stocker les infos pour la completion
+    setPendingCompletion({ sessionId, youtubeUrl, videoInfo })
+
+    // Définir la date du prochain jour ouvrable
+    if (nextBusinessDay) {
+      setIsSelectingForDate(nextBusinessDay)
+    }
+
+    // Scroll vers la roue
+    wheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   const formatNextDate = (date: Date) => {
@@ -169,8 +247,7 @@ export default function HomePage() {
     })
   }
 
-  // Déterminer si on doit montrer la section "DJ du jour" ou la roue
-  const hasTodayPendingSession = todaySession?.session?.status === 'pending'
+  // Déterminer si on doit montrer la section "DJ du jour"
   const showTodaySection = todaySession?.isBusinessDay && todaySession?.session
 
   return (
@@ -195,11 +272,13 @@ export default function HomePage() {
           className="text-center mb-6"
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-1">
-            {isSelectingForDate ? (
+            {isSelectingForDate || pendingCompletion ? (
               <>
                 <span className="text-glow text-neon-pink">{t('session.selectDjFor')}</span>
                 {' '}
-                <span className="text-glow text-neon-blue">{formatNextDate(isSelectingForDate)}</span>
+                <span className="text-glow text-neon-blue">
+                  {isSelectingForDate ? formatNextDate(isSelectingForDate) : ''}
+                </span>
               </>
             ) : (
               <>
@@ -210,7 +289,7 @@ export default function HomePage() {
             )}
           </h2>
           <p className="text-gray-400 text-sm">
-            {isSelectingForDate
+            {isSelectingForDate || pendingCompletion
               ? t('session.spinForNextDay')
               : t('home.spinDescription')
             }
@@ -221,7 +300,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
           {/* Colonne gauche - Roue */}
-          <div className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
+          <div ref={wheelRef} className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
             {isLoading ? (
               <div className="flex items-center justify-center h-72">
                 <motion.div
@@ -250,11 +329,11 @@ export default function HomePage() {
                   exit={{ opacity: 0, y: -20 }}
                   className="mt-4 w-full max-w-sm"
                 >
-                  {isSelectingForDate && (
+                  {(isSelectingForDate || pendingCompletion) && (
                     <div className="mb-3 p-2 bg-neon-blue/10 rounded-lg text-center">
                       <p className="text-sm text-neon-blue flex items-center justify-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        {formatNextDate(isSelectingForDate)}
+                        {isSelectingForDate ? formatNextDate(isSelectingForDate) : ''}
                       </p>
                     </div>
                   )}
@@ -274,8 +353,8 @@ export default function HomePage() {
               )}
             </AnimatePresence>
 
-            {/* Gestion du prochain DJ - sous la roue */}
-            {!winner && (
+            {/* Gestion du prochain DJ - sous la roue (masqué si pending completion) */}
+            {!winner && !pendingCompletion && (
               <div className="mt-4 w-full max-w-sm">
                 <NextDJManager
                   key={refreshKey}
@@ -294,6 +373,7 @@ export default function HomePage() {
               <TodayDJ
                 key={`today-${refreshKey}`}
                 onSessionUpdated={handleSessionChange}
+                onRequestSpin={handleRequestSpin}
               />
             ) : (
               <motion.div
@@ -325,7 +405,7 @@ export default function HomePage() {
             )}
 
             {/* Dernière musique */}
-            <LatestMusic />
+            <LatestMusic key={`music-${refreshKey}`} />
           </div>
 
           {/* Colonne droite - Probabilités (tous les DJs) */}

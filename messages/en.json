@@ -158,6 +158,8 @@
     "skipSession": "Cancel session",
     "skipConfirm": "Are you sure you want to cancel this session? The DJ can be selected for the next business day.",
     "skipReason": "Cancellation reason",
-    "skip": "Cancel"
+    "skip": "Cancel",
+    "validateAndSpin": "Validate and spin the wheel",
+    "spinExplanation": "The wheel will choose the DJ for the next business day"
   }
 }
