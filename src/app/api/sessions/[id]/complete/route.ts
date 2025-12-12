@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { extractVideoId } from '@/lib/youtube'
+import { extractVideoId, fetchYouTubeInfo } from '@/lib/youtube'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
@@ -13,7 +13,8 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { youtubeUrl, title, artist } = body
+    const { youtubeUrl } = body
+    let { title, artist } = body
 
     // Validation
     if (!youtubeUrl?.trim()) {
@@ -38,6 +39,23 @@ export async function POST(
     // Extraire l'ID de la vidéo YouTube
     const videoId = extractVideoId(youtubeUrl)
 
+    // Si title ou artist manquent, essayer de récupérer les infos YouTube
+    if ((!title || !artist) && videoId) {
+      try {
+        const videoInfo = await fetchYouTubeInfo(youtubeUrl)
+        if (videoInfo) {
+          title = title || videoInfo.title
+          artist = artist || videoInfo.artist
+        }
+      } catch (e) {
+        console.error('Failed to fetch video info:', e)
+      }
+    }
+
+    // Fallback values
+    const finalTitle = title?.trim() || 'Blindtest'
+    const finalArtist = artist?.trim() || existing.djName
+
     // Mettre à jour la session
     const session = await prisma.dailySession.update({
       where: { id },
@@ -45,24 +63,22 @@ export async function POST(
         status: 'completed',
         youtubeUrl: youtubeUrl.trim(),
         videoId: videoId || null,
-        title: title?.trim() || null,
-        artist: artist?.trim() || null
+        title: finalTitle,
+        artist: finalArtist
       }
     })
 
-    // Créer aussi une entrée dans l'historique si on a les infos
-    if (title && artist) {
-      await prisma.dJHistory.create({
-        data: {
-          djName: session.djName,
-          title: title.trim(),
-          artist: artist.trim(),
-          youtubeUrl: youtubeUrl.trim(),
-          videoId: videoId || null,
-          playedAt: session.date
-        }
-      })
-    }
+    // Toujours créer une entrée dans l'historique
+    await prisma.dJHistory.create({
+      data: {
+        djName: session.djName,
+        title: finalTitle,
+        artist: finalArtist,
+        youtubeUrl: youtubeUrl.trim(),
+        videoId: videoId || null,
+        playedAt: session.date
+      }
+    })
 
     return NextResponse.json(session)
   } catch (error) {
