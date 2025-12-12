@@ -1,120 +1,292 @@
 # 🎧 DJ Rotation App
 
-Application fun pour sélectionner le DJ du jour lors de vos blindtests quotidiens !
+<div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Prisma](https://img.shields.io/badge/Prisma-SQLite-2D3748)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748?style=for-the-badge&logo=prisma)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
 
-## ✨ Fonctionnalités
+**A stunning animated wheel selector for your daily DJ blind test events**
 
-- 🎰 **Roue de sélection animée** - Tournez la roue pour désigner le DJ du jour
-- 📊 **Probabilités intelligentes** - Basées sur l'ancienneté et le nombre de passages
-- 👥 **Gestion des participants** - Ajoutez, modifiez, activez/désactivez les DJs
-- 📥 **Import Excel** - Importez vos participants depuis un fichier Excel
-- 🎨 **Interface fun et moderne** - Design disco avec animations
-- 🐳 **Docker Ready** - Déployez facilement sur votre NAS
+*Fair rotation • Smart probabilities • Beautiful animations*
 
-## 🚀 Installation
+[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [API](#-api-reference)
 
-### Option 1 : Docker Compose (recommandé)
+</div>
+
+---
+
+## ✨ Features
+
+### 🎡 Animated Spinning Wheel
+An eye-catching, disco-themed wheel with smooth Framer Motion animations. Each DJ gets their own color segment, and when a winner is selected — confetti explosion!
+
+### 🧠 Smart Probability System
+No more unfair selections. The algorithm considers:
+- **Recency** (60% weight) — DJs who haven't played recently get boosted
+- **Total Plays** (40% weight) — DJs with fewer plays get higher chances
+- Weights are fully adjustable via admin sliders
+
+### 👥 DJ Management
+Full CRUD operations with:
+- Custom avatars (30+ emojis: 🎸🎺🎹🎷🦊🐱...)
+- Personalized colors
+- Play statistics tracking
+- Active/inactive toggle
+
+### 📊 Excel Import/Export
+Bulk import your DJ roster from Excel files. Download a template, fill it in, and import in seconds.
+
+### 🎵 Music History
+Track every song played during blind tests:
+- Auto-fill from YouTube URLs
+- Search and filter history
+- YouTube thumbnails & inline player
+
+### 🌍 Multilingual
+Full support for **English** and **French** with instant language switching.
+
+### 🎨 Gorgeous UI
+- Dark neon disco theme
+- Glass-morphism effects
+- Responsive on all devices
+- Glowing text animations
+
+---
+
+## 🚀 Quick Start
+
+### Using Docker (Recommended)
 
 ```bash
+# Clone the repository
+git clone https://github.com/BorisHenne/dj-helper.git
+cd dj-helper
+
+# Start with Docker Compose
 docker compose up -d --build
+
+# Access at http://localhost:9000
 ```
 
-L'application sera accessible sur `http://localhost:3000`
-
-### Option 2 : Développement local
+### Local Development
 
 ```bash
-# Installer les dépendances
+# Install dependencies
 npm install
 
-# Initialiser la base de données
+# Initialize database
 npx prisma db push
 
-# Lancer en mode développement
+# Seed sample data (16 DJs + history)
+npm run db:seed
+
+# Start dev server
 npm run dev
+
+# Access at http://localhost:3000
 ```
 
-## 📁 Structure du projet
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Framework** | Next.js 14 (App Router) |
+| **UI** | React 18 + TailwindCSS |
+| **Animations** | Framer Motion |
+| **Database** | SQLite + Prisma ORM |
+| **i18n** | next-intl |
+| **Icons** | Lucide React |
+| **YouTube** | ytsr |
+| **Deployment** | Docker + GitHub Actions |
+
+---
+
+## 📁 Project Structure
 
 ```
-dj-rotation-app/
+dj-helper/
 ├── src/
-│   ├── app/              # Pages Next.js (App Router)
-│   │   ├── api/          # Routes API
-│   │   ├── admin/        # Page d'administration
-│   │   └── page.tsx      # Page principale
-│   ├── components/       # Composants React
-│   ├── lib/              # Utilitaires
-│   └── types/            # Types TypeScript
+│   ├── app/
+│   │   ├── api/            # 13 API routes
+│   │   ├── admin/          # Admin panel & history
+│   │   └── page.tsx        # Home (spinning wheel)
+│   ├── components/         # React components
+│   │   ├── SpinningWheel.tsx
+│   │   ├── YouTubePlayer.tsx
+│   │   ├── LatestMusic.tsx
+│   │   └── ...
+│   ├── lib/                # Utilities
+│   └── types/              # TypeScript interfaces
 ├── prisma/
-│   └── schema.prisma     # Schéma de base de données
-├── docker-compose.yml    # Configuration Docker
-└── Dockerfile
+│   ├── schema.prisma       # Database schema
+│   └── seed.mjs            # Sample data
+├── messages/               # EN/FR translations
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-## 📊 Calcul des probabilités
+---
 
-La probabilité de chaque DJ est calculée selon :
+## 📡 API Reference
 
-1. **Ancienneté** (poids par défaut : 60%)
-   - Plus un DJ n'a pas joué depuis longtemps, plus sa probabilité augmente
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/djs` | List all DJs |
+| `POST` | `/api/djs` | Create a DJ |
+| `PATCH` | `/api/djs/[id]` | Update a DJ |
+| `DELETE` | `/api/djs/[id]` | Delete a DJ |
+| `POST` | `/api/djs/[id]/play` | Record a play |
+| `GET` | `/api/probability` | Get calculated probabilities |
+| `POST` | `/api/probability` | Select DJ by probability |
+| `GET/PATCH` | `/api/settings` | Manage settings |
+| `POST` | `/api/import` | Import from Excel |
+| `GET` | `/api/template` | Download Excel template |
+| `GET` | `/api/history` | Get music history |
+| `GET` | `/api/youtube/search` | Search YouTube |
 
-2. **Nombre de passages** (poids par défaut : 40%)
-   - Moins un DJ a joué au total, plus sa probabilité augmente
+---
 
-Les poids sont ajustables dans le panneau d'administration.
+## 🗃 Database Schema
 
-## 📥 Import Excel
+```prisma
+model DJ {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  avatar       String    @default("🎵")
+  color        String    @default("#FF69B4")
+  totalPlays   Int       @default(0)
+  lastPlayedAt DateTime?
+  isActive     Boolean   @default(true)
+  plays        Play[]
+}
 
-Format attendu pour l'import :
+model DJHistory {
+  id         Int      @id @default(autoincrement())
+  djName     String
+  title      String
+  artist     String
+  youtubeUrl String?
+  videoId    String?
+  playedAt   DateTime @default(now())
+}
 
-| Nom | Nombre de passages | Dernier passage |
-|-----|-------------------|-----------------|
+model Settings {
+  id               Int    @id @default(1)
+  weightLastPlayed Float  @default(0.6)
+  weightTotalPlays Float  @default(0.4)
+}
+```
+
+---
+
+## 🐳 Docker Configuration
+
+```yaml
+services:
+  dj-rotation:
+    build: .
+    container_name: dj-rotation
+    ports:
+      - "9000:3000"
+    volumes:
+      - dj-rotation-data:/app/prisma/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/settings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+---
+
+## 📜 Available Scripts
+
+```bash
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run start      # Start production server
+npm run lint       # Run ESLint
+npm run db:push    # Sync Prisma schema
+npm run db:studio  # Open Prisma Studio GUI
+npm run db:seed    # Seed database with sample data
+```
+
+---
+
+## 📊 Probability Calculation
+
+The probability for each DJ is calculated using two factors:
+
+### 1. Recency Score (default 60% weight)
+The longer a DJ hasn't played, the higher their probability increases.
+
+### 2. Play Count Score (default 40% weight)
+The fewer total plays a DJ has, the higher their probability.
+
+Both weights are adjustable through the admin panel sliders.
+
+---
+
+## 🎯 How It Works
+
+1. **Spin the Wheel** — Click the wheel on the home page
+2. **Watch the Magic** — The wheel spins with smooth animations
+3. **Winner Selected** — Confetti celebrates the chosen DJ
+4. **Confirm & Record** — Log the play and optionally add the song
+5. **Fair Rotation** — Probabilities automatically adjust for next spin
+
+---
+
+## 🔧 CI/CD Configuration
+
+### Required GitHub Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `SSH_PRIVATE_KEY` | SSH private key for NAS access |
+| `SSH_USER` | SSH username |
+| `SSH_HOSTNAME` | Cloudflare tunnel hostname |
+| `DEPLOY_PATH` | Deployment path on NAS |
+
+The app auto-deploys to your NAS via Cloudflare Tunnel on push to main.
+
+---
+
+## 📥 Excel Import Format
+
+| Name | Total Plays | Last Play |
+|------|-------------|-----------|
 | Alice | 5 | 2024-01-15 |
 | Bob | 3 | 2024-02-20 |
 | Charlie | 0 | |
 
-Téléchargez le template depuis l'interface admin.
-
-## 🔧 Configuration CI/CD
-
-### Secrets GitHub requis
-
-| Secret | Description |
-|--------|-------------|
-| `SSH_PRIVATE_KEY` | Clé SSH privée pour accès au NAS |
-| `SSH_USER` | Utilisateur SSH |
-| `SSH_HOSTNAME` | Hostname du tunnel Cloudflare |
-| `DEPLOY_PATH` | Chemin de déploiement sur le NAS |
-
-## 📝 API Endpoints
-
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/djs` | Liste tous les DJs |
-| POST | `/api/djs` | Crée un nouveau DJ |
-| GET | `/api/djs/[id]` | Récupère un DJ |
-| PATCH | `/api/djs/[id]` | Met à jour un DJ |
-| DELETE | `/api/djs/[id]` | Supprime un DJ |
-| POST | `/api/djs/[id]/play` | Enregistre un passage |
-| GET | `/api/probability` | Calcule les probabilités |
-| POST | `/api/probability` | Sélectionne un DJ |
-| POST | `/api/import` | Import Excel |
-| GET | `/api/template` | Télécharge le template Excel |
-| GET/PATCH | `/api/settings` | Gère les paramètres |
-
-## 🎉 Utilisation
-
-1. **Ajouter des participants** via l'admin (`/admin`)
-2. **Tourner la roue** sur la page principale
-3. **Confirmer** le DJ sélectionné pour enregistrer le passage
-4. Les probabilités sont automatiquement recalculées !
+Download the template directly from the admin interface.
 
 ---
 
-Made with ❤️ pour les blindtests quotidiens
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+
+**Made with 💜 for blind test enthusiasts**
+
+*Spin fair. Play loud. Have fun.*
+
+</div>
