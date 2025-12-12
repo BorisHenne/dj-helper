@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
-import SpinningWheel from '@/components/SpinningWheel'
+import SpinningWheel, { SpinningWheelRef } from '@/components/SpinningWheel'
 import DJCard from '@/components/DJCard'
 import ConfirmButton from '@/components/ConfirmButton'
 import TodayDJ from '@/components/TodayDJ'
@@ -44,8 +44,9 @@ export default function HomePage() {
   // Pending completion (quand le DJ du jour lance la roue)
   const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null)
 
-  // Ref pour la roue
-  const wheelRef = useRef<HTMLDivElement>(null)
+  // Refs
+  const wheelContainerRef = useRef<HTMLDivElement>(null)
+  const spinningWheelRef = useRef<SpinningWheelRef>(null)
 
   const fetchProbabilities = useCallback(async () => {
     try {
@@ -235,8 +236,13 @@ export default function HomePage() {
       setIsSelectingForDate(nextBusinessDay)
     }
 
-    // Scroll vers la roue
-    wheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Scroll vers la roue puis lancer le spin automatiquement
+    wheelContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    // Attendre la fin du scroll avant de lancer le spin
+    setTimeout(() => {
+      spinningWheelRef.current?.triggerSpin()
+    }, 500)
   }
 
   const formatNextDate = (date: Date) => {
@@ -300,7 +306,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
           {/* Colonne gauche - Roue */}
-          <div ref={wheelRef} className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
+          <div ref={wheelContainerRef} className="lg:col-span-5 xl:col-span-4 flex flex-col items-center">
             {isLoading ? (
               <div className="flex items-center justify-center h-72">
                 <motion.div
@@ -313,6 +319,7 @@ export default function HomePage() {
               </div>
             ) : (
               <SpinningWheel
+                ref={spinningWheelRef}
                 djs={djs}
                 onSpinComplete={handleSpinComplete}
                 isSpinning={isSpinning}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { motion } from 'framer-motion'
 import { DJWithProbability } from '@/types'
 import { useTranslations } from 'next-intl'
@@ -12,12 +12,16 @@ interface SpinningWheelProps {
   setIsSpinning: (spinning: boolean) => void
 }
 
-export default function SpinningWheel({
+export interface SpinningWheelRef {
+  triggerSpin: () => void
+}
+
+const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
   djs,
   onSpinComplete,
   isSpinning,
   setIsSpinning,
-}: SpinningWheelProps) {
+}, ref) => {
   const t = useTranslations()
   const wheelRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
@@ -86,6 +90,11 @@ export default function SpinningWheel({
       }
     }, 5000)
   }, [isSpinning, djs, rotation, setIsSpinning, onSpinComplete])
+
+  // Expose spinWheel to parent via ref
+  useImperativeHandle(ref, () => ({
+    triggerSpin: spinWheel
+  }), [spinWheel])
 
   if (djs.length === 0) {
     return (
@@ -234,4 +243,8 @@ export default function SpinningWheel({
       )}
     </div>
   )
-}
+})
+
+SpinningWheel.displayName = 'SpinningWheel'
+
+export default SpinningWheel
