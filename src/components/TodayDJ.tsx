@@ -50,14 +50,15 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
       const response = await fetch(`/api/sessions/today${params}`)
       const data: TodaySessionResponse = await response.json()
 
-      // Si après midi et session terminée/annulée, afficher la prochaine session
-      if (isAfterNoon() && data.session && (data.session.status === 'skipped' || data.session.status === 'completed')) {
+      // Si la session d'aujourd'hui est terminée ou annulée, afficher la prochaine session
+      if (data.session && (data.session.status === 'skipped' || data.session.status === 'completed')) {
         const nextResponse = await fetch(`/api/sessions/next${params}`)
         const nextData: NextSessionResponse = await nextResponse.json()
         if (nextData.session && !nextData.isToday) {
           setSession(nextData.session)
           setShowingNextSession(true)
           setIsBusinessDay(true)
+          setIsLoading(false)
           return
         }
       }
