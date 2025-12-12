@@ -158,6 +158,8 @@
     "skipSession": "Annuler la session",
     "skipConfirm": "Voulez-vous vraiment annuler cette session ? Le DJ pourra être sélectionné pour le prochain jour ouvrable.",
     "skipReason": "Raison de l'annulation",
-    "skip": "Annuler"
+    "skip": "Annuler",
+    "validateAndSpin": "Valider et lancer la roue",
+    "spinExplanation": "La roue choisira le DJ du prochain jour ouvrable"
   }
 }

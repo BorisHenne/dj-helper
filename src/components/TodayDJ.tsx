@@ -13,26 +13,26 @@ import {
   Link as LinkIcon,
   XCircle,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Disc3
 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface TodayDJProps {
   onSessionUpdated?: () => void
+  onRequestSpin?: (sessionId: string, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => void
 }
 
-export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
+export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProps) {
   const t = useTranslations()
   const locale = useLocale()
   const [session, setSession] = useState<DailySession | null>(null)
   const [isBusinessDay, setIsBusinessDay] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [youtubeUrl, setYoutubeUrl] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isFetchingInfo, setIsFetchingInfo] = useState(false)
   const [videoInfo, setVideoInfo] = useState<{ title: string; artist: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [showingNextSession, setShowingNextSession] = useState(false)
 
   const isAfterNoon = () => new Date().getHours() >= 12
@@ -112,39 +112,17 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
     return () => clearTimeout(debounce)
   }, [youtubeUrl])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSpinRequest = () => {
     if (!session || !youtubeUrl.trim()) return
 
-    setIsSubmitting(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/sessions/${session.id}/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          youtubeUrl: youtubeUrl.trim(),
-          title: videoInfo?.title || '',
-          artist: videoInfo?.artist || ''
-        })
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to complete session')
-      }
-
-      setSuccess(true)
-      setTimeout(() => {
-        fetchTodaySession()
-        onSessionUpdated?.()
-      }, 1500)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Une erreur est survenue')
-    } finally {
-      setIsSubmitting(false)
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
+    if (!youtubeRegex.test(youtubeUrl)) {
+      setError(t('validation.invalidYoutubeUrl'))
+      return
     }
+
+    setError(null)
+    onRequestSpin?.(session.id, youtubeUrl.trim(), videoInfo)
   }
 
   if (isLoading) {
@@ -246,7 +224,7 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
         </h3>
 
         <div className="flex items-center gap-4 mb-4">
-          <div className="text-4xl">{session.djName.includes(' ') ? '🎧' : '🎵'}</div>
+          <div className="text-4xl">🎧</div>
           <div>
             <h4 className="font-bold text-xl text-white">{session.djName}</h4>
             <p className="text-green-400 text-sm flex items-center gap-1">
@@ -313,24 +291,9 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
         </p>
       )}
 
-      {/* Success Message */}
-      <AnimatePresence>
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-xl text-green-400 flex items-center gap-2"
-          >
-            <Check className="w-5 h-5" />
-            {t('session.linkAdded')}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* YouTube Form - seulement pour la session du jour */}
-      {!success && !showingNextSession && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+      {!showingNextSession && (
+        <div className="space-y-4">
           <div>
             <label className="block text-sm text-gray-400 mb-2">
               {t('session.addYoutubeLink')}
@@ -351,16 +314,19 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
           </div>
 
           {/* Video Info Preview */}
-          {videoInfo && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-white/5 rounded-lg text-sm"
-            >
-              <p className="text-white font-medium truncate">{videoInfo.title}</p>
-              <p className="text-gray-400 truncate">{videoInfo.artist}</p>
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {videoInfo && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-3 bg-white/5 rounded-lg text-sm"
+              >
+                <p className="text-white font-medium truncate">{videoInfo.title}</p>
+                <p className="text-gray-400 truncate">{videoInfo.artist}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Error */}
           {error && (
@@ -369,24 +335,20 @@ export default function TodayDJ({ onSessionUpdated }: TodayDJProps) {
             </div>
           )}
 
+          {/* Bouton pour lancer la roue */}
           <button
-            type="submit"
-            disabled={!youtubeUrl.trim() || isSubmitting}
+            onClick={handleSpinRequest}
+            disabled={!youtubeUrl.trim() || isFetchingInfo}
             className="w-full py-3 px-4 bg-gradient-to-r from-neon-pink to-neon-blue text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                {t('common.loading')}
-              </>
-            ) : (
-              <>
-                <Youtube className="w-5 h-5" />
-                {t('session.submitLink')}
-              </>
-            )}
+            <Disc3 className="w-5 h-5" />
+            {t('session.validateAndSpin')}
           </button>
-        </form>
+
+          <p className="text-center text-gray-500 text-xs">
+            {t('session.spinExplanation')}
+          </p>
+        </div>
       )}
     </motion.div>
   )
