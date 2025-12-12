@@ -15,6 +15,7 @@ interface SpinningWheelProps {
 
 export interface SpinningWheelRef {
   triggerSpin: () => void
+  resetWinner: () => void
 }
 
 const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
@@ -97,9 +98,10 @@ const SpinningWheel = forwardRef<SpinningWheelRef, SpinningWheelProps>(({
     }, 5000)
   }, [isSpinning, djs, rotation, setIsSpinning, onSpinComplete, excludeDjIds])
 
-  // Expose spinWheel to parent via ref
+  // Expose spinWheel and resetWinner to parent via ref
   useImperativeHandle(ref, () => ({
-    triggerSpin: spinWheel
+    triggerSpin: spinWheel,
+    resetWinner: () => setWinner(null)
   }), [spinWheel])
 
   if (djs.length === 0) {

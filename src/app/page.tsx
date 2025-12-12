@@ -210,6 +210,7 @@ export default function HomePage() {
       setWinner(null)
       setIsSelectingForDate(null)
       setRefusedDjIds([])  // Reset les DJs refusés
+      spinningWheelRef.current?.resetWinner()  // Reset le cadre du gagnant
       setRefreshKey(prev => prev + 1)
     } catch (error) {
       console.error('Failed to confirm winner:', error)
