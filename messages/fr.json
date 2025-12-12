@@ -52,6 +52,7 @@
     "probability": "Probabilité",
     "confirmDjOfDay": "Confirmer que {name} {avatar} est le DJ du jour ?",
     "confirmDescription": "Cela enregistrera le passage et mettra à jour les probabilités",
+    "refused": "Refusé",
     "latestMusic": "Dernière musique"
   },
   "history": {
