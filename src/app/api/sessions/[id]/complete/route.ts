@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, dailySessions, djHistory } from '@/db'
+import { eq } from 'drizzle-orm'
 import { extractVideoId, fetchYouTubeInfo } from '@/lib/youtube'
 
 // Force dynamic rendering (database access)
@@ -28,9 +29,10 @@ export async function POST(
     }
 
     // Vérifier que la session existe
-    const existing = await prisma.dailySession.findUnique({
-      where: { id }
-    })
+    const [existing] = await db.select()
+      .from(dailySessions)
+      .where(eq(dailySessions.id, id))
+      .limit(1)
 
     if (!existing) {
       return NextResponse.json({ error: 'Session non trouvée' }, { status: 404 })
@@ -57,27 +59,26 @@ export async function POST(
     const finalArtist = artist?.trim() || existing.djName
 
     // Mettre à jour la session
-    const session = await prisma.dailySession.update({
-      where: { id },
-      data: {
+    const [session] = await db.update(dailySessions)
+      .set({
         status: 'completed',
         youtubeUrl: youtubeUrl.trim(),
         videoId: videoId || null,
         title: finalTitle,
-        artist: finalArtist
-      }
-    })
+        artist: finalArtist,
+        updatedAt: new Date(),
+      })
+      .where(eq(dailySessions.id, id))
+      .returning()
 
     // Toujours créer une entrée dans l'historique
-    await prisma.dJHistory.create({
-      data: {
-        djName: session.djName,
-        title: finalTitle,
-        artist: finalArtist,
-        youtubeUrl: youtubeUrl.trim(),
-        videoId: videoId || null,
-        playedAt: session.date
-      }
+    await db.insert(djHistory).values({
+      djName: session.djName,
+      title: finalTitle,
+      artist: finalArtist,
+      youtubeUrl: youtubeUrl.trim(),
+      videoId: videoId || null,
+      playedAt: session.date
     })
 
     return NextResponse.json(session)

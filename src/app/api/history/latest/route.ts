@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djHistory } from '@/db'
+import { desc } from 'drizzle-orm'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
@@ -7,9 +8,10 @@ export const dynamic = 'force-dynamic'
 // GET - Récupérer la dernière entrée d'historique
 export async function GET() {
   try {
-    const latest = await prisma.dJHistory.findFirst({
-      orderBy: { playedAt: 'desc' },
-    })
+    const [latest] = await db.select()
+      .from(djHistory)
+      .orderBy(desc(djHistory.playedAt))
+      .limit(1)
 
     if (!latest) {
       return NextResponse.json(null)

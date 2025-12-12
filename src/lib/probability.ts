@@ -1,8 +1,9 @@
-import { DJ } from '@prisma/client'
+import type { DJ } from '@/db'
 
 interface DJWithProbability extends DJ {
   probability: number
   daysSinceLastPlay: number
+  rawScore?: number
 }
 
 interface ProbabilitySettings {

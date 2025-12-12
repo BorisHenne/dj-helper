@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, dailySessions } from '@/db'
+import { eq } from 'drizzle-orm'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
@@ -15,22 +16,24 @@ export async function POST(
     const { reason } = body
 
     // Vérifier que la session existe
-    const existing = await prisma.dailySession.findUnique({
-      where: { id }
-    })
+    const [existing] = await db.select()
+      .from(dailySessions)
+      .where(eq(dailySessions.id, id))
+      .limit(1)
 
     if (!existing) {
       return NextResponse.json({ error: 'Session non trouvée' }, { status: 404 })
     }
 
     // Mettre à jour la session comme annulée
-    const session = await prisma.dailySession.update({
-      where: { id },
-      data: {
+    const [session] = await db.update(dailySessions)
+      .set({
         status: 'skipped',
-        skipReason: reason?.trim() || 'Daily annulée'
-      }
-    })
+        skipReason: reason?.trim() || 'Daily annulée',
+        updatedAt: new Date(),
+      })
+      .where(eq(dailySessions.id, id))
+      .returning()
 
     return NextResponse.json(session)
   } catch (error) {

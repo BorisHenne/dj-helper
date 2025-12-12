@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djs, plays, settings } from '@/db'
+import { eq, sql } from 'drizzle-orm'
 
 // POST - Enregistre qu'un DJ a joué
 export async function POST(
@@ -12,8 +13,8 @@ export async function POST(
     const { notes } = body
 
     // Vérifier que le DJ existe
-    const dj = await prisma.dJ.findUnique({
-      where: { id },
+    const dj = await db.query.djs.findFirst({
+      where: eq(djs.id, id),
     })
 
     if (!dj) {
@@ -23,31 +24,34 @@ export async function POST(
     const now = new Date()
 
     // Créer le play et mettre à jour le DJ en une transaction
-    const [play, updatedDj] = await prisma.$transaction([
-      prisma.play.create({
-        data: {
-          djId: id,
-          playedAt: now,
-          notes: notes || null,
-        },
-      }),
-      prisma.dJ.update({
-        where: { id },
-        data: {
-          totalPlays: { increment: 1 },
-          lastPlayedAt: now,
-        },
-      }),
-    ])
+    const result = await db.transaction(async (tx) => {
+      const [play] = await tx.insert(plays).values({
+        djId: id,
+        playedAt: now,
+        notes: notes || null,
+      }).returning()
 
-    // Mettre à jour les settings avec le dernier DJ sélectionné
-    await prisma.settings.upsert({
-      where: { id: 'default' },
-      update: { lastSelectedDjId: id },
-      create: { id: 'default', lastSelectedDjId: id },
+      const [updatedDj] = await tx.update(djs)
+        .set({
+          totalPlays: sql`${djs.totalPlays} + 1`,
+          lastPlayedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(djs.id, id))
+        .returning()
+
+      return { play, updatedDj }
     })
 
-    return NextResponse.json({ play, dj: updatedDj })
+    // Mettre à jour les settings avec le dernier DJ sélectionné
+    await db.insert(settings)
+      .values({ id: 'default', lastSelectedDjId: id })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { lastSelectedDjId: id },
+      })
+
+    return NextResponse.json({ play: result.play, dj: result.updatedDj })
   } catch (error) {
     console.error('Error recording play:', error)
     return NextResponse.json({ error: 'Failed to record play' }, { status: 500 })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, dailySessions } from '@/db'
+import { eq, and, gte, lte } from 'drizzle-orm'
 import { getNextBusinessDay, parseDateISO } from '@/lib/dates'
 
 // Force dynamic rendering (database access)
@@ -25,9 +26,10 @@ export async function POST(
     }
 
     // Vérifier que la session existe
-    const existing = await prisma.dailySession.findUnique({
-      where: { id }
-    })
+    const [existing] = await db.select()
+      .from(dailySessions)
+      .where(eq(dailySessions.id, id))
+      .limit(1)
 
     if (!existing) {
       return NextResponse.json({ error: 'Session non trouvée' }, { status: 404 })
@@ -42,13 +44,13 @@ export async function POST(
     const nextBusinessDay = getNextBusinessDay(baseDate, true)
 
     // Marquer la session actuelle comme skipped
-    await prisma.dailySession.update({
-      where: { id },
-      data: {
+    await db.update(dailySessions)
+      .set({
         status: 'skipped',
-        skipReason: 'Reporté'
-      }
-    })
+        skipReason: 'Reporté',
+        updatedAt: new Date(),
+      })
+      .where(eq(dailySessions.id, id))
 
     // Vérifier s'il existe déjà une session pour le prochain jour ouvrable
     const nextDayStart = new Date(nextBusinessDay)
@@ -56,36 +58,36 @@ export async function POST(
     const nextDayEnd = new Date(nextBusinessDay)
     nextDayEnd.setHours(23, 59, 59, 999)
 
-    const existingNextSession = await prisma.dailySession.findFirst({
-      where: {
-        date: {
-          gte: nextDayStart,
-          lte: nextDayEnd
-        }
-      }
-    })
+    const [existingNextSession] = await db.select()
+      .from(dailySessions)
+      .where(and(
+        gte(dailySessions.date, nextDayStart),
+        lte(dailySessions.date, nextDayEnd)
+      ))
+      .limit(1)
 
     let newSession
     if (existingNextSession) {
       // Mettre à jour la session existante avec le DJ reporté
-      newSession = await prisma.dailySession.update({
-        where: { id: existingNextSession.id },
-        data: {
+      const [updated] = await db.update(dailySessions)
+        .set({
           djId: existing.djId,
           djName: existing.djName,
-          status: 'pending'
-        }
-      })
+          status: 'pending',
+          updatedAt: new Date(),
+        })
+        .where(eq(dailySessions.id, existingNextSession.id))
+        .returning()
+      newSession = updated
     } else {
       // Créer une nouvelle session pour le prochain jour ouvrable avec le même DJ
-      newSession = await prisma.dailySession.create({
-        data: {
-          date: nextBusinessDay,
-          djId: existing.djId,
-          djName: existing.djName,
-          status: 'pending'
-        }
-      })
+      const [created] = await db.insert(dailySessions).values({
+        date: nextBusinessDay,
+        djId: existing.djId,
+        djName: existing.djName,
+        status: 'pending'
+      }).returning()
+      newSession = created
     }
 
     return NextResponse.json({
