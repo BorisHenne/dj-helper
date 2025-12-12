@@ -95,6 +95,53 @@ async function main() {
   }
 
   console.log(`\n✅ History: ${created} created, ${skipped} skipped (already exist)`)
+
+  // Seed initial daily sessions
+  console.log('\n📅 Seeding daily sessions...')
+
+  // Check if sessions already exist
+  const existingSessions = await prisma.dailySession.findMany()
+
+  if (existingSessions.length === 0) {
+    // Find A. Gautier DJ
+    const gautierDj = await prisma.dJ.findUnique({
+      where: { name: 'A. Gautier' }
+    })
+
+    if (gautierDj) {
+      // Create today's skipped session (12/12/2025)
+      const today = new Date('2025-12-12T00:00:00.000Z')
+      await prisma.dailySession.create({
+        data: {
+          id: generateId(),
+          date: today,
+          djId: null,
+          djName: 'A. Gautier',
+          status: 'skipped',
+          skipReason: 'Daily annulée'
+        }
+      })
+      console.log('  ✓ 2025-12-12: Session skipped (Daily annulée)')
+
+      // Create next Monday's session with A. Gautier (15/12/2025)
+      const nextMonday = new Date('2025-12-15T00:00:00.000Z')
+      await prisma.dailySession.create({
+        data: {
+          id: generateId(),
+          date: nextMonday,
+          djId: gautierDj.id,
+          djName: gautierDj.name,
+          status: 'pending'
+        }
+      })
+      console.log('  ✓ 2025-12-15: A. Gautier assigned for next Monday')
+    } else {
+      console.log('  ⚠ A. Gautier DJ not found, skipping session seeding')
+    }
+  } else {
+    console.log(`  ⏭ ${existingSessions.length} sessions already exist (skipped)`)
+  }
+
   console.log('\n🎉 Database seeding complete!')
 }
 

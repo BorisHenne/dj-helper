@@ -23,7 +23,8 @@
     "color": "Couleur",
     "passages": "passages",
     "daysAgo": "j",
-    "never": "Jamais"
+    "never": "Jamais",
+    "optional": "optionnel"
   },
   "header": {
     "title": "DJ Rotation",
@@ -128,5 +129,33 @@
     "iosStep1": "Appuyez sur le bouton Partager",
     "iosStep2": "Sélectionnez \"Sur l'écran d'accueil\"",
     "offline": "Vous êtes hors ligne"
+  },
+  "session": {
+    "todayDj": "DJ du Jour",
+    "nextSession": "Prochaine session",
+    "noSessionToday": "Pas de session planifiée aujourd'hui",
+    "selectNextDj": "Utilisez la roue pour sélectionner le prochain DJ",
+    "useWheelToSelect": "Utilisez la roue pour sélectionner un DJ",
+    "weekend": "Pas de session le week-end",
+    "cancelled": "Annulée",
+    "completed": "Blindtest terminé",
+    "dailyCancelled": "Daily annulée",
+    "addYoutubeLink": "Ajoutez le lien YouTube du blindtest",
+    "submitLink": "Valider le lien",
+    "linkAdded": "Lien ajouté avec succès !",
+    "viewBlindtest": "Voir le blindtest",
+    "selectDjFor": "Sélection du DJ pour",
+    "spinForNextDay": "Tournez la roue pour choisir le DJ du prochain jour ouvrable",
+    "today": "aujourd'hui",
+    "noNextSession": "Pas de session planifiée",
+    "sessionSkipped": "La dernière session a été annulée",
+    "nextBusinessDay": "Prochain jour ouvrable",
+    "selectWithWheel": "Sélectionner avec la roue",
+    "editNextDj": "Modifier le DJ",
+    "selectDj": "Sélectionner un DJ",
+    "skipSession": "Annuler la session",
+    "skipConfirm": "Voulez-vous vraiment annuler cette session ? Le DJ pourra être sélectionné pour le prochain jour ouvrable.",
+    "skipReason": "Raison de l'annulation",
+    "skip": "Annuler"
   }
 }

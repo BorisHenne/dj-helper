@@ -7,9 +7,10 @@ import Header from '@/components/Header'
 import SpinningWheel from '@/components/SpinningWheel'
 import DJCard from '@/components/DJCard'
 import ConfirmButton from '@/components/ConfirmButton'
-import LatestMusic from '@/components/LatestMusic'
-import { DJWithProbability, ProbabilityResponse } from '@/types'
-import { RefreshCw, Trophy, Users } from 'lucide-react'
+import TodayDJ from '@/components/TodayDJ'
+import NextDJManager from '@/components/NextDJManager'
+import { DJWithProbability, ProbabilityResponse, TodaySessionResponse } from '@/types'
+import { RefreshCw, Trophy, Users, Calendar } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 
 // Import dynamique de react-confetti pour éviter les erreurs SSR
@@ -26,6 +27,12 @@ export default function HomePage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
+  // Session state
+  const [todaySession, setTodaySession] = useState<TodaySessionResponse | null>(null)
+  const [nextBusinessDay, setNextBusinessDay] = useState<Date | null>(null)
+  const [isSelectingForDate, setIsSelectingForDate] = useState<Date | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
   const fetchProbabilities = useCallback(async () => {
     try {
       const response = await fetch('/api/probability')
@@ -38,8 +45,30 @@ export default function HomePage() {
     }
   }, [])
 
+  const fetchTodaySession = useCallback(async () => {
+    try {
+      const response = await fetch('/api/sessions/today')
+      const data: TodaySessionResponse = await response.json()
+      setTodaySession(data)
+    } catch (error) {
+      console.error('Failed to fetch today session:', error)
+    }
+  }, [])
+
+  const fetchNextBusinessDay = useCallback(async () => {
+    try {
+      const response = await fetch('/api/sessions/next')
+      const data = await response.json()
+      setNextBusinessDay(new Date(data.nextBusinessDay))
+    } catch (error) {
+      console.error('Failed to fetch next business day:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchProbabilities()
+    fetchTodaySession()
+    fetchNextBusinessDay()
 
     // Window size for confetti
     setWindowSize({ width: window.innerWidth, height: window.innerHeight })
@@ -48,7 +77,7 @@ export default function HomePage() {
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [fetchProbabilities])
+  }, [fetchProbabilities, fetchTodaySession, fetchNextBusinessDay])
 
   const handleSpinComplete = (selectedDJ: DJWithProbability) => {
     setWinner(selectedDJ)
@@ -61,15 +90,52 @@ export default function HomePage() {
 
     setIsConfirming(true)
     try {
+      // Déterminer la date pour la session
+      const sessionDate = isSelectingForDate || nextBusinessDay || new Date()
+      const dateStr = sessionDate.toISOString().split('T')[0]
+
+      // Créer la session pour le prochain jour ouvrable
+      const sessionResponse = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          djId: winner.id,
+          djName: winner.name,
+          date: dateStr
+        }),
+      })
+
+      if (!sessionResponse.ok) {
+        const error = await sessionResponse.json()
+        // Si une session existe déjà, mettre à jour au lieu de créer
+        if (error.session) {
+          await fetch(`/api/sessions/${error.session.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              djId: winner.id,
+              djName: winner.name
+            }),
+          })
+        }
+      }
+
+      // Enregistrer le passage du DJ
       await fetch(`/api/djs/${winner.id}/play`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: `Blindtest du ${new Date().toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}` }),
+        body: JSON.stringify({
+          notes: `Blindtest du ${sessionDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}`
+        }),
       })
 
-      // Rafraîchir les probabilités
+      // Rafraîchir les données
       await fetchProbabilities()
+      await fetchTodaySession()
+      await fetchNextBusinessDay()
       setWinner(null)
+      setIsSelectingForDate(null)
+      setRefreshKey(prev => prev + 1)
     } catch (error) {
       console.error('Failed to confirm winner:', error)
     } finally {
@@ -79,8 +145,32 @@ export default function HomePage() {
 
   const handleReset = () => {
     setWinner(null)
+    setIsSelectingForDate(null)
     fetchProbabilities()
   }
+
+  const handleSelectDJForDate = (dj: DJWithProbability, date: Date) => {
+    setIsSelectingForDate(date)
+    // Trigger the wheel to spin
+  }
+
+  const handleSessionChange = () => {
+    fetchTodaySession()
+    fetchNextBusinessDay()
+    setRefreshKey(prev => prev + 1)
+  }
+
+  const formatNextDate = (date: Date) => {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    })
+  }
+
+  // Déterminer si on doit montrer la section "DJ du jour" ou la roue
+  const hasTodayPendingSession = todaySession?.session?.status === 'pending'
+  const showTodaySection = todaySession?.isBusinessDay && todaySession?.session
 
   return (
     <div className="min-h-screen">
@@ -104,12 +194,25 @@ export default function HomePage() {
           className="text-center mb-6"
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-1">
-            <span className="text-glow text-neon-pink">{t('home.whoWillBeDj')}</span>
-            {' '}
-            <span className="text-glow text-neon-blue">{t('home.ofTheDay')}</span>
+            {isSelectingForDate ? (
+              <>
+                <span className="text-glow text-neon-pink">{t('session.selectDjFor')}</span>
+                {' '}
+                <span className="text-glow text-neon-blue">{formatNextDate(isSelectingForDate)}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-glow text-neon-pink">{t('home.whoWillBeDj')}</span>
+                {' '}
+                <span className="text-glow text-neon-blue">{t('home.ofTheDay')}</span>
+              </>
+            )}
           </h2>
           <p className="text-gray-400 text-sm">
-            {t('home.spinDescription')}
+            {isSelectingForDate
+              ? t('session.spinForNextDay')
+              : t('home.spinDescription')
+            }
           </p>
         </motion.div>
 
@@ -146,6 +249,14 @@ export default function HomePage() {
                   exit={{ opacity: 0, y: -20 }}
                   className="mt-4 w-full max-w-sm"
                 >
+                  {isSelectingForDate && (
+                    <div className="mb-3 p-2 bg-neon-blue/10 rounded-lg text-center">
+                      <p className="text-sm text-neon-blue flex items-center justify-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {formatNextDate(isSelectingForDate)}
+                      </p>
+                    </div>
+                  )}
                   <ConfirmButton
                     winner={winner}
                     onConfirm={handleConfirmWinner}
@@ -161,11 +272,55 @@ export default function HomePage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Gestion du prochain DJ - sous la roue */}
+            {!winner && (
+              <div className="mt-4 w-full max-w-sm">
+                <NextDJManager
+                  key={refreshKey}
+                  djs={djs}
+                  onSelectDJ={handleSelectDJForDate}
+                  onSessionChange={handleSessionChange}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Colonne centrale - Dernière musique */}
+          {/* Colonne centrale - DJ du jour ou dernière musique */}
           <div className="lg:col-span-7 xl:col-span-4">
-            <LatestMusic />
+            {showTodaySection ? (
+              <TodayDJ
+                key={`today-${refreshKey}`}
+                onSessionUpdated={handleSessionChange}
+              />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass rounded-2xl p-6"
+              >
+                <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-neon-blue" />
+                  {t('session.todayDj')}
+                </h3>
+                <div className="text-center py-8 text-gray-400">
+                  {!todaySession?.isBusinessDay ? (
+                    <>
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">{t('session.weekend')}</p>
+                    </>
+                  ) : (
+                    <>
+                      <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">{t('session.noSessionToday')}</p>
+                      <p className="text-xs mt-2 text-gray-500">
+                        {t('session.useWheelToSelect')}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Colonne droite - Probabilités (tous les DJs) */}

@@ -48,3 +48,19 @@ model DJHistory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Session quotidienne de blindtest
+model DailySession {
+  id            String    @id @default(cuid())
+  date          DateTime  @unique // Date de la session (jour ouvrable)
+  djId          String?   // DJ assigné (null si pas encore assigné)
+  djName        String    // Nom du DJ (copié pour l'historique)
+  status        String    @default("pending") // pending, completed, skipped
+  youtubeUrl    String?   // Lien YouTube ajouté après le blindtest
+  videoId       String?   // ID vidéo YouTube
+  title         String?   // Titre de la musique
+  artist        String?   // Artiste
+  skipReason    String?   // Raison de l'annulation (ex: "Daily annulée")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
