@@ -9,6 +9,7 @@ import DJCard from '@/components/DJCard'
 import ConfirmButton from '@/components/ConfirmButton'
 import TodayDJ from '@/components/TodayDJ'
 import NextDJManager from '@/components/NextDJManager'
+import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse, TodaySessionResponse } from '@/types'
 import { RefreshCw, Trophy, Users, Calendar } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
@@ -286,8 +287,9 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Colonne centrale - DJ du jour ou dernière musique */}
-          <div className="lg:col-span-7 xl:col-span-4">
+          {/* Colonne centrale - DJ du jour + dernière musique */}
+          <div className="lg:col-span-7 xl:col-span-4 space-y-6">
+            {/* DJ du jour */}
             {showTodaySection ? (
               <TodayDJ
                 key={`today-${refreshKey}`}
@@ -321,6 +323,9 @@ export default function HomePage() {
                 </div>
               </motion.div>
             )}
+
+            {/* Dernière musique */}
+            <LatestMusic />
           </div>
 
           {/* Colonne droite - Probabilités (tous les DJs) */}
