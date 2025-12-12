@@ -82,8 +82,22 @@ async function main() {
 
   const existingKeys = new Set(
     existingHistory.map(h => {
-      // playedAt is now always stored as an ISO string
-      const dateStr = new Date(h.playedAt).toISOString().split('T')[0]
+      // Handle different date formats: ISO string, timestamp number, or invalid
+      let dateStr: string
+      try {
+        if (typeof h.playedAt === 'number') {
+          // Timestamp format (from old integer mode)
+          dateStr = new Date(h.playedAt).toISOString().split('T')[0]
+        } else if (h.playedAt && !isNaN(Date.parse(h.playedAt))) {
+          // Valid ISO string
+          dateStr = new Date(h.playedAt).toISOString().split('T')[0]
+        } else {
+          // Invalid or unknown format - use a placeholder
+          dateStr = 'unknown'
+        }
+      } catch {
+        dateStr = 'unknown'
+      }
       return `${h.djName}-${h.title}-${dateStr}`
     })
   )
