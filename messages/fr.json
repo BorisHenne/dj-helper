@@ -1,0 +1,81 @@
+{
+  "common": {
+    "home": "Accueil",
+    "history": "Historique",
+    "admin": "Admin",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "refresh": "Rafraîchir",
+    "loading": "Chargement...",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "noData": "Aucune donnée",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "header": {
+    "title": "DJ Rotation",
+    "subtitle": "Blindtest Quotidien"
+  },
+  "home": {
+    "title": "DJ du Jour",
+    "subtitle": "Qui animera le blindtest ?",
+    "spinWheel": "Lancer la Roue",
+    "spinning": "En cours...",
+    "selectedDj": "DJ Sélectionné",
+    "activeDjs": "DJs actifs",
+    "totalBlindtests": "Blindtests total",
+    "lastMusic": "Dernière Musique",
+    "noMusicYet": "Aucune musique jouée",
+    "viewHistory": "Voir l'historique"
+  },
+  "history": {
+    "title": "Historique des musiques",
+    "subtitle": "Gérez l'historique des musiques passées par les DJs",
+    "entries": "entrées",
+    "noEntries": "Aucune musique dans l'historique",
+    "addMusic": "Ajoutez les musiques passées par les DJs",
+    "djName": "Nom du DJ",
+    "songTitle": "Titre de la musique",
+    "artist": "Artiste",
+    "youtubeUrl": "Lien YouTube",
+    "playedAt": "Date de passage",
+    "autoFetch": "Auto",
+    "fetchingInfo": "Récupération des infos YouTube...",
+    "watchOnYoutube": "Voir sur YouTube"
+  },
+  "admin": {
+    "title": "Gestion des DJs",
+    "subtitle": "Gérez les DJs et les paramètres",
+    "addDj": "Ajouter un DJ",
+    "editDj": "Modifier le DJ",
+    "djList": "Liste des DJs",
+    "name": "Nom",
+    "passages": "passages",
+    "lastPlayed": "Dernier passage",
+    "never": "Jamais",
+    "daysAgo": "j",
+    "probability": "Probabilité",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "settings": "Paramètres",
+    "weightLastPlayed": "Poids : Dernier passage",
+    "weightTotalPlays": "Poids : Nombre de passages",
+    "importExport": "Import/Export",
+    "downloadTemplate": "Télécharger le modèle",
+    "importFile": "Importer un fichier"
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "invalidUrl": "URL invalide",
+    "invalidYoutubeUrl": "Lien YouTube invalide"
+  },
+  "language": {
+    "en": "Anglais",
+    "fr": "Français",
+    "switchTo": "Changer de langue"
+  }
+}

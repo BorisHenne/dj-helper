@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Settings, Home, Music, History } from 'lucide-react'
+import { Settings, Home, History } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Header() {
   const pathname = usePathname()
+  const t = useTranslations()
 
   return (
     <header className="sticky top-0 z-50 glass-dark">
@@ -23,9 +26,9 @@ export default function Header() {
             </motion.div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-neon-pink to-neon-blue bg-clip-text text-transparent">
-                DJ Rotation
+                {t('header.title')}
               </h1>
-              <p className="text-xs text-gray-400">Blindtest Daily</p>
+              <p className="text-xs text-gray-400">{t('header.subtitle')}</p>
             </div>
           </Link>
 
@@ -33,16 +36,17 @@ export default function Header() {
           <nav className="flex items-center gap-2">
             <NavLink href="/" active={pathname === '/'}>
               <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Accueil</span>
+              <span className="hidden sm:inline">{t('common.home')}</span>
             </NavLink>
             <NavLink href="/admin/history" active={pathname === '/admin/history'}>
               <History className="w-4 h-4" />
-              <span className="hidden sm:inline">Historique</span>
+              <span className="hidden sm:inline">{t('common.history')}</span>
             </NavLink>
             <NavLink href="/admin" active={pathname === '/admin'}>
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin</span>
+              <span className="hidden sm:inline">{t('common.admin')}</span>
             </NavLink>
+            <LanguageSwitcher />
           </nav>
         </div>
       </div>
