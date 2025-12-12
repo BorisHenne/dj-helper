@@ -12,14 +12,14 @@ export async function GET() {
     const todayEnd = new Date(today)
     todayEnd.setHours(23, 59, 59, 999)
 
-    // D'abord vérifier s'il y a une session aujourd'hui non complétée
+    // D'abord vérifier s'il y a une session aujourd'hui en pending (pas completed, pas skipped)
     const todaySession = await prisma.dailySession.findFirst({
       where: {
         date: {
           gte: today,
           lte: todayEnd
         },
-        status: { not: 'completed' }
+        status: 'pending'
       }
     })
 
@@ -31,7 +31,7 @@ export async function GET() {
       })
     }
 
-    // Sinon chercher la prochaine session à venir
+    // Sinon chercher la prochaine session à venir (demain ou après)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
@@ -40,7 +40,7 @@ export async function GET() {
         date: {
           gte: tomorrow
         },
-        status: { not: 'skipped' }
+        status: 'pending'
       },
       orderBy: { date: 'asc' }
     })
