@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djs, plays } from '@/db'
+import { eq, desc } from 'drizzle-orm'
 
 // GET - Récupère un DJ par ID
 export async function GET(
@@ -8,11 +9,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const dj = await prisma.dJ.findUnique({
-      where: { id },
-      include: {
+    const dj = await db.query.djs.findFirst({
+      where: eq(djs.id, id),
+      with: {
         plays: {
-          orderBy: { playedAt: 'desc' },
+          orderBy: [desc(plays.playedAt)],
         },
       },
     })
@@ -38,7 +39,9 @@ export async function PATCH(
     const body = await request.json()
     const { name, avatar, color, isActive, totalPlays, lastPlayedAt } = body
 
-    const updateData: Record<string, unknown> = {}
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date(),
+    }
 
     if (name !== undefined) updateData.name = name.trim()
     if (avatar !== undefined) updateData.avatar = avatar
@@ -49,10 +52,14 @@ export async function PATCH(
       updateData.lastPlayedAt = lastPlayedAt ? new Date(lastPlayedAt) : null
     }
 
-    const dj = await prisma.dJ.update({
-      where: { id },
-      data: updateData,
-    })
+    const [dj] = await db.update(djs)
+      .set(updateData)
+      .where(eq(djs.id, id))
+      .returning()
+
+    if (!dj) {
+      return NextResponse.json({ error: 'DJ not found' }, { status: 404 })
+    }
 
     return NextResponse.json(dj)
   } catch (error) {
@@ -68,9 +75,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    await prisma.dJ.delete({
-      where: { id },
-    })
+    await db.delete(djs).where(eq(djs.id, id))
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, dailySessions } from '@/db'
+import { and, gte, lte, eq, asc } from 'drizzle-orm'
 import { getNextBusinessDay, getTodayMidnight, isBusinessDay, parseDateISO } from '@/lib/dates'
 
 // Force dynamic rendering (database access)
@@ -15,15 +16,14 @@ export async function GET(request: NextRequest) {
     todayEnd.setHours(23, 59, 59, 999)
 
     // D'abord vérifier s'il y a une session aujourd'hui en pending (pas completed, pas skipped)
-    const todaySession = await prisma.dailySession.findFirst({
-      where: {
-        date: {
-          gte: today,
-          lte: todayEnd
-        },
-        status: 'pending'
-      }
-    })
+    const [todaySession] = await db.select()
+      .from(dailySessions)
+      .where(and(
+        gte(dailySessions.date, today),
+        lte(dailySessions.date, todayEnd),
+        eq(dailySessions.status, 'pending')
+      ))
+      .limit(1)
 
     // Toujours calculer le prochain jour ouvrable (après aujourd'hui)
     const nextBusinessDay = getNextBusinessDay(today, true)
@@ -40,18 +40,17 @@ export async function GET(request: NextRequest) {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const nextSession = await prisma.dailySession.findFirst({
-      where: {
-        date: {
-          gte: tomorrow
-        },
-        status: 'pending'
-      },
-      orderBy: { date: 'asc' }
-    })
+    const [nextSession] = await db.select()
+      .from(dailySessions)
+      .where(and(
+        gte(dailySessions.date, tomorrow),
+        eq(dailySessions.status, 'pending')
+      ))
+      .orderBy(asc(dailySessions.date))
+      .limit(1)
 
     return NextResponse.json({
-      session: nextSession,
+      session: nextSession || null,
       isToday: false,
       nextBusinessDay: nextBusinessDay.toISOString()
     })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djs, plays } from '@/db'
+import { eq, asc, desc } from 'drizzle-orm'
 import { getRandomColor, getRandomEmoji } from '@/lib/probability'
 import {
   validatePayloadSize,
@@ -15,17 +16,17 @@ export const dynamic = 'force-dynamic'
 // GET - Liste tous les DJs
 export async function GET() {
   try {
-    const djs = await prisma.dJ.findMany({
-      orderBy: { name: 'asc' },
-      include: {
+    const allDjs = await db.query.djs.findMany({
+      orderBy: [asc(djs.name)],
+      with: {
         plays: {
-          orderBy: { playedAt: 'desc' },
-          take: 5,
+          orderBy: [desc(plays.playedAt)],
+          limit: 5,
         },
       },
     })
 
-    return NextResponse.json(djs)
+    return NextResponse.json(allDjs)
   } catch (error) {
     console.error('Error fetching DJs:', error)
     return NextResponse.json({ error: 'Failed to fetch DJs' }, { status: 500 })
@@ -60,8 +61,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier si le DJ existe déjà
-    const existing = await prisma.dJ.findUnique({
-      where: { name },
+    const existing = await db.query.djs.findFirst({
+      where: eq(djs.name, name),
     })
 
     if (existing) {
@@ -72,15 +73,13 @@ export async function POST(request: NextRequest) {
     const avatar = sanitizeString(rawAvatar, 10) // Emoji max 10 chars
     const color = sanitizeString(rawColor, 20)   // Color code max 20 chars
 
-    const dj = await prisma.dJ.create({
-      data: {
-        name,
-        avatar: avatar || getRandomEmoji(),
-        color: color || getRandomColor(),
-        totalPlays: typeof totalPlays === 'number' ? Math.max(0, Math.floor(totalPlays)) : 0,
-        lastPlayedAt: lastPlayedAt && typeof lastPlayedAt === 'string' ? new Date(lastPlayedAt) : null,
-      },
-    })
+    const [dj] = await db.insert(djs).values({
+      name,
+      avatar: avatar || getRandomEmoji(),
+      color: color || getRandomColor(),
+      totalPlays: typeof totalPlays === 'number' ? Math.max(0, Math.floor(totalPlays)) : 0,
+      lastPlayedAt: lastPlayedAt && typeof lastPlayedAt === 'string' ? new Date(lastPlayedAt) : null,
+    }).returning()
 
     return NextResponse.json(dj, { status: 201 })
   } catch (error) {

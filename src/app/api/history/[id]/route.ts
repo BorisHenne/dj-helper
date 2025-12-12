@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djHistory } from '@/db'
+import { eq } from 'drizzle-orm'
 
 // GET - Récupérer une entrée spécifique
 export async function GET(
@@ -9,9 +10,10 @@ export async function GET(
   try {
     const { id } = await params
 
-    const entry = await prisma.dJHistory.findUnique({
-      where: { id },
-    })
+    const [entry] = await db.select()
+      .from(djHistory)
+      .where(eq(djHistory.id, id))
+      .limit(1)
 
     if (!entry) {
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
@@ -35,9 +37,10 @@ export async function PATCH(
     const { djName, title, artist, youtubeUrl, videoId, playedAt } = body
 
     // Vérifier que l'entrée existe
-    const existing = await prisma.dJHistory.findUnique({
-      where: { id },
-    })
+    const [existing] = await db.select()
+      .from(djHistory)
+      .where(eq(djHistory.id, id))
+      .limit(1)
 
     if (!existing) {
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
@@ -51,7 +54,9 @@ export async function PATCH(
       }
     }
 
-    const updateData: Record<string, unknown> = {}
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date(),
+    }
     if (djName !== undefined) updateData.djName = djName.trim()
     if (title !== undefined) updateData.title = title.trim()
     if (artist !== undefined) updateData.artist = artist.trim()
@@ -59,10 +64,10 @@ export async function PATCH(
     if (videoId !== undefined) updateData.videoId = videoId
     if (playedAt !== undefined) updateData.playedAt = new Date(playedAt)
 
-    const entry = await prisma.dJHistory.update({
-      where: { id },
-      data: updateData,
-    })
+    const [entry] = await db.update(djHistory)
+      .set(updateData)
+      .where(eq(djHistory.id, id))
+      .returning()
 
     return NextResponse.json(entry)
   } catch (error) {
@@ -80,17 +85,16 @@ export async function DELETE(
     const { id } = await params
 
     // Vérifier que l'entrée existe
-    const existing = await prisma.dJHistory.findUnique({
-      where: { id },
-    })
+    const [existing] = await db.select()
+      .from(djHistory)
+      .where(eq(djHistory.id, id))
+      .limit(1)
 
     if (!existing) {
       return NextResponse.json({ error: 'Entrée non trouvée' }, { status: 404 })
     }
 
-    await prisma.dJHistory.delete({
-      where: { id },
-    })
+    await db.delete(djHistory).where(eq(djHistory.id, id))
 
     return NextResponse.json({ message: 'Entrée supprimée avec succès' })
   } catch (error) {

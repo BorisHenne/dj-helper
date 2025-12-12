@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djHistory } from '@/db'
+import { desc } from 'drizzle-orm'
+import { createId } from '@paralleldrive/cuid2'
 import {
   validatePayloadSize,
   sanitizeString,
@@ -12,28 +14,13 @@ import {
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
 
-// Génère un CUID sécurisé avec crypto
-function generateSecureCuid(): string {
-  const timestamp = Date.now().toString(36)
-  // Use crypto for secure random if available, fallback to Math.random
-  let randomPart: string
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint8Array(10)
-    crypto.getRandomValues(array)
-    randomPart = Array.from(array, (b) => b.toString(36)).join('').substring(0, 15)
-  } else {
-    randomPart = Math.random().toString(36).substring(2, 15)
-  }
-  return `c${timestamp}${randomPart}`
-}
-
 // GET - Liste tout l'historique (ordonné par date décroissante)
 export async function GET() {
   try {
-    const history = await prisma.dJHistory.findMany({
-      orderBy: { playedAt: 'desc' },
-      take: 500, // Limit to prevent memory issues
-    })
+    const history = await db.select()
+      .from(djHistory)
+      .orderBy(desc(djHistory.playedAt))
+      .limit(500) // Limit to prevent memory issues
 
     return NextResponse.json(history)
   } catch (error) {
@@ -81,16 +68,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: urlValidation.error || 'Le lien YouTube n\'est pas valide' }, { status: 400 })
     }
 
-    const entry = await prisma.dJHistory.create({
-      data: {
-        id: generateSecureCuid(),
-        djName,
-        title,
-        artist,
-        youtubeUrl: urlValidation.url!,
-        playedAt: playedAt && typeof playedAt === 'string' ? new Date(playedAt) : new Date(),
-      },
-    })
+    const [entry] = await db.insert(djHistory).values({
+      id: createId(),
+      djName,
+      title,
+      artist,
+      youtubeUrl: urlValidation.url!,
+      playedAt: playedAt && typeof playedAt === 'string' ? new Date(playedAt) : new Date(),
+    }).returning()
 
     return NextResponse.json(entry, { status: 201 })
   } catch (error) {

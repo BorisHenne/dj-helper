@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, djs, settings, djHistory } from '@/db'
+import { eq, notInArray, sql } from 'drizzle-orm'
 import { calculateProbabilities, selectDJByProbability } from '@/lib/probability'
 
 // Force dynamic rendering (database access)
@@ -8,40 +9,42 @@ export const dynamic = 'force-dynamic'
 // GET - Calcule les probabilités pour tous les DJs actifs
 export async function GET() {
   try {
-    const djs = await prisma.dJ.findMany({
-      where: { isActive: true },
-    })
+    const allDjs = await db.select().from(djs).where(eq(djs.isActive, true))
 
     // Count history entries for each DJ by name
-    const historyCounts = await prisma.dJHistory.groupBy({
-      by: ['djName'],
-      _count: { djName: true },
-    })
+    const historyCounts = await db
+      .select({
+        djName: djHistory.djName,
+        count: sql<number>`count(*)`.as('count'),
+      })
+      .from(djHistory)
+      .groupBy(djHistory.djName)
 
     const historyCountMap = new Map(
-      historyCounts.map(h => [h.djName, h._count.djName])
+      historyCounts.map(h => [h.djName, h.count])
     )
 
     // Override totalPlays with history count
-    const djsWithHistoryCount = djs.map(dj => ({
+    const djsWithHistoryCount = allDjs.map(dj => ({
       ...dj,
       totalPlays: historyCountMap.get(dj.name) || 0,
     }))
 
-    const settings = await prisma.settings.findUnique({
-      where: { id: 'default' },
-    })
+    const [settingsRow] = await db.select()
+      .from(settings)
+      .where(eq(settings.id, 'default'))
+      .limit(1)
 
     const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
-      weightLastPlayed: settings?.weightLastPlayed ?? 0.6,
-      weightTotalPlays: settings?.weightTotalPlays ?? 0.4,
+      weightLastPlayed: settingsRow?.weightLastPlayed ?? 0.6,
+      weightTotalPlays: settingsRow?.weightTotalPlays ?? 0.4,
     })
 
     return NextResponse.json({
       djs: djsWithProbability,
       settings: {
-        weightLastPlayed: settings?.weightLastPlayed ?? 0.6,
-        weightTotalPlays: settings?.weightTotalPlays ?? 0.4,
+        weightLastPlayed: settingsRow?.weightLastPlayed ?? 0.6,
+        weightTotalPlays: settingsRow?.weightTotalPlays ?? 0.4,
       },
     })
   } catch (error) {
@@ -67,36 +70,43 @@ export async function POST(request: NextRequest) {
       // No body or invalid JSON - that's fine, no exclusion
     }
 
-    const djs = await prisma.dJ.findMany({
-      where: {
-        isActive: true,
-        ...(excludeDjIds.length > 0 ? { id: { notIn: excludeDjIds } } : {})
-      },
-    })
+    let query = db.select().from(djs).where(eq(djs.isActive, true))
+
+    if (excludeDjIds.length > 0) {
+      query = db.select().from(djs).where(
+        sql`${djs.isActive} = 1 AND ${djs.id} NOT IN (${sql.raw(excludeDjIds.map(id => `'${id}'`).join(','))})`
+      ) as typeof query
+    }
+
+    const allDjs = await query
 
     // Count history entries for each DJ by name
-    const historyCounts = await prisma.dJHistory.groupBy({
-      by: ['djName'],
-      _count: { djName: true },
-    })
+    const historyCounts = await db
+      .select({
+        djName: djHistory.djName,
+        count: sql<number>`count(*)`.as('count'),
+      })
+      .from(djHistory)
+      .groupBy(djHistory.djName)
 
     const historyCountMap = new Map(
-      historyCounts.map(h => [h.djName, h._count.djName])
+      historyCounts.map(h => [h.djName, h.count])
     )
 
     // Override totalPlays with history count
-    const djsWithHistoryCount = djs.map(dj => ({
+    const djsWithHistoryCount = allDjs.map(dj => ({
       ...dj,
       totalPlays: historyCountMap.get(dj.name) || 0,
     }))
 
-    const settings = await prisma.settings.findUnique({
-      where: { id: 'default' },
-    })
+    const [settingsRow] = await db.select()
+      .from(settings)
+      .where(eq(settings.id, 'default'))
+      .limit(1)
 
     const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
-      weightLastPlayed: settings?.weightLastPlayed ?? 0.6,
-      weightTotalPlays: settings?.weightTotalPlays ?? 0.4,
+      weightLastPlayed: settingsRow?.weightLastPlayed ?? 0.6,
+      weightTotalPlays: settingsRow?.weightTotalPlays ?? 0.4,
     })
 
     const selectedDJ = selectDJByProbability(djsWithProbability)

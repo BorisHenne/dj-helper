@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db, dailySessions } from '@/db'
+import { and, gte, lte } from 'drizzle-orm'
 import { getTodayMidnight, isBusinessDay, parseDateISO } from '@/lib/dates'
 
 // Force dynamic rendering (database access)
@@ -25,17 +26,16 @@ export async function GET(request: NextRequest) {
     const todayEnd = new Date(today)
     todayEnd.setHours(23, 59, 59, 999)
 
-    const session = await prisma.dailySession.findFirst({
-      where: {
-        date: {
-          gte: today,
-          lte: todayEnd
-        }
-      }
-    })
+    const [session] = await db.select()
+      .from(dailySessions)
+      .where(and(
+        gte(dailySessions.date, today),
+        lte(dailySessions.date, todayEnd)
+      ))
+      .limit(1)
 
     return NextResponse.json({
-      session,
+      session: session || null,
       isBusinessDay: true,
       date: today.toISOString()
     })

@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getNextBusinessDay, formatDateISO, parseDateISO } from '@/lib/dates'
+import { db, dailySessions } from '@/db'
+import { eq, desc, and, gte, lt } from 'drizzle-orm'
+import { createId } from '@paralleldrive/cuid2'
+import { getNextBusinessDay, parseDateISO } from '@/lib/dates'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
-
-// Génère un CUID simple
-function generateCuid(): string {
-  const timestamp = Date.now().toString(36)
-  const randomPart = Math.random().toString(36).substring(2, 15)
-  return `c${timestamp}${randomPart}`
-}
 
 // GET - Liste toutes les sessions
 export async function GET(request: NextRequest) {
@@ -19,13 +14,15 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const limit = searchParams.get('limit')
 
-    const where = status ? { status } : {}
+    let query = db.select().from(dailySessions)
 
-    const sessions = await prisma.dailySession.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      take: limit ? parseInt(limit) : undefined,
-    })
+    if (status) {
+      query = query.where(eq(dailySessions.status, status)) as typeof query
+    }
+
+    const sessions = await query
+      .orderBy(desc(dailySessions.date))
+      .limit(limit ? parseInt(limit) : 1000)
 
     return NextResponse.json(sessions)
   } catch (error) {
@@ -51,14 +48,18 @@ export async function POST(request: NextRequest) {
       : getNextBusinessDay()
 
     // Vérifier qu'une session n'existe pas déjà pour cette date
-    const existing = await prisma.dailySession.findFirst({
-      where: {
-        date: {
-          gte: new Date(sessionDate.setHours(0, 0, 0, 0)),
-          lt: new Date(sessionDate.setHours(23, 59, 59, 999))
-        }
-      }
-    })
+    const startOfDay = new Date(sessionDate)
+    startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date(sessionDate)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const [existing] = await db.select()
+      .from(dailySessions)
+      .where(and(
+        gte(dailySessions.date, startOfDay),
+        lt(dailySessions.date, endOfDay)
+      ))
+      .limit(1)
 
     if (existing) {
       return NextResponse.json(
@@ -68,15 +69,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer la session
-    const session = await prisma.dailySession.create({
-      data: {
-        id: generateCuid(),
-        date: sessionDate,
-        djId: djId || null,
-        djName: djName.trim(),
-        status: 'pending',
-      },
-    })
+    const [session] = await db.insert(dailySessions).values({
+      id: createId(),
+      date: sessionDate,
+      djId: djId || null,
+      djName: djName.trim(),
+      status: 'pending',
+    }).returning()
 
     return NextResponse.json(session, { status: 201 })
   } catch (error) {
