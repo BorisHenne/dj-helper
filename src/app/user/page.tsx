@@ -3,13 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/Header'
-import { DJ, Settings, ImportResult } from '@/types'
+import { DJ, Settings } from '@/types'
 import { AVATAR_EMOJIS } from '@/lib/probability'
 import { useTranslations, useLocale } from 'next-intl'
 import {
   Plus,
-  Upload,
-  Download,
   Trash2,
   Edit3,
   Save,
@@ -18,13 +16,9 @@ import {
   Calendar,
   Hash,
   Sliders,
-  FileSpreadsheet,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
 } from 'lucide-react'
 
-export default function AdminPage() {
+export default function UserPage() {
   const t = useTranslations()
   const locale = useLocale()
   const [djs, setDjs] = useState<DJ[]>([])
@@ -32,7 +26,6 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [importResult, setImportResult] = useState<ImportResult | null>(null)
 
   // Form states
   const [newDj, setNewDj] = useState({ name: '', avatar: '🎧', color: '#ff6ec7' })
@@ -96,7 +89,7 @@ export default function AdminPage() {
   }
 
   const handleDeleteDj = async (id: string, name: string) => {
-    if (!confirm(t('admin.deleteConfirm', { name }))) return
+    if (!confirm(t('user.deleteConfirm', { name }))) return
 
     try {
       await fetch(`/api/djs/${id}`, { method: 'DELETE' })
@@ -132,32 +125,6 @@ export default function AdminPage() {
     }
   }
 
-  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      const response = await fetch('/api/import', {
-        method: 'POST',
-        body: formData,
-      })
-      const result: ImportResult = await response.json()
-      setImportResult(result)
-      fetchData()
-
-      // Clear after 5 seconds
-      setTimeout(() => setImportResult(null), 5000)
-    } catch (error) {
-      console.error('Failed to import:', error)
-    }
-
-    // Reset input
-    e.target.value = ''
-  }
-
   const startEdit = (dj: DJ) => {
     setEditingId(dj.id)
     setEditDj({
@@ -185,35 +152,12 @@ export default function AdminPage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold mb-2">
-            <span className="text-glow-sm text-neon-pink">{t('admin.title')}</span>
+            <span className="text-glow-sm text-neon-pink">{t('user.title')}</span>
           </h1>
           <p className="text-gray-400">
-            {t('admin.subtitle')}
+            {t('user.subtitle')}
           </p>
         </motion.div>
-
-        {/* Import Result Toast */}
-        <AnimatePresence>
-          {importResult && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-                importResult.errors.length > 0
-                  ? 'bg-yellow-500/20 border border-yellow-500/50'
-                  : 'bg-green-500/20 border border-green-500/50'
-              }`}
-            >
-              {importResult.errors.length > 0 ? (
-                <AlertCircle className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-              <span>{importResult.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Section principale - Liste des DJs */}
@@ -227,42 +171,18 @@ export default function AdminPage() {
               <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <User className="w-5 h-5 text-neon-blue" />
-                  {t('admin.participants')} ({djs.length})
+                  {t('user.participants')} ({djs.length})
                 </h2>
 
-                <div className="flex flex-wrap gap-2">
-                  {/* Bouton ajouter */}
-                  <motion.button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Plus className="w-4 h-4" />
-                    {t('common.add')}
-                  </motion.button>
-
-                  {/* Import Excel */}
-                  <label className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2 cursor-pointer">
-                    <Upload className="w-4 h-4" />
-                    {t('admin.importExcel')}
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={handleFileImport}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {/* Télécharger template */}
-                  <a
-                    href="/api/template"
-                    className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    {t('admin.template')}
-                  </a>
-                </div>
+                <motion.button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="btn-neon px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Plus className="w-4 h-4" />
+                  {t('common.add')}
+                </motion.button>
               </div>
 
               {/* Formulaire d'ajout */}
@@ -345,10 +265,10 @@ export default function AdminPage() {
                 </div>
               ) : djs.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
-                  <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="mb-2">{t('admin.noParticipants')}</p>
+                  <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="mb-2">{t('user.noParticipants')}</p>
                   <p className="text-sm">
-                    {t('admin.addDjsOrImport')}
+                    {t('user.addParticipantsHint')}
                   </p>
                 </div>
               ) : (
@@ -451,7 +371,7 @@ export default function AdminPage() {
                                   : 'bg-gray-500/20 text-gray-400'
                               }`}
                             >
-                              {dj.isActive ? t('admin.active') : t('admin.inactive')}
+                              {dj.isActive ? t('user.active') : t('user.inactive')}
                             </button>
                             <button
                               onClick={() => startEdit(dj)}
@@ -484,7 +404,7 @@ export default function AdminPage() {
             >
               <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
                 <Sliders className="w-5 h-5 text-neon-yellow" />
-                {t('admin.settings')}
+                {t('user.settings')}
               </h2>
 
               {settings && (
@@ -493,7 +413,7 @@ export default function AdminPage() {
                   <div>
                     <div className="flex justify-between mb-2">
                       <label className="text-sm text-gray-400">
-                        {t('admin.weightSeniority')}
+                        {t('user.weightSeniority')}
                       </label>
                       <span className="text-neon-pink font-bold">
                         {(settings.weightLastPlayed * 100).toFixed(0)}%
@@ -511,7 +431,7 @@ export default function AdminPage() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {t('admin.weightSeniorityDescription')}
+                      {t('user.weightSeniorityDescription')}
                     </p>
                   </div>
 
@@ -519,7 +439,7 @@ export default function AdminPage() {
                   <div>
                     <div className="flex justify-between mb-2">
                       <label className="text-sm text-gray-400">
-                        {t('admin.weightPlayCount')}
+                        {t('user.weightPlayCount')}
                       </label>
                       <span className="text-neon-blue font-bold">
                         {(settings.weightTotalPlays * 100).toFixed(0)}%
@@ -537,27 +457,8 @@ export default function AdminPage() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {t('admin.weightPlayCountDescription')}
+                      {t('user.weightPlayCountDescription')}
                     </p>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-4 bg-white/5 rounded-xl">
-                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-neon-green" />
-                      {t('admin.excelImportFormat')}
-                    </h4>
-                    <ul className="text-xs text-gray-400 space-y-1">
-                      <li>• {t('admin.columnA')}</li>
-                      <li>• {t('admin.columnB')}</li>
-                      <li>• {t('admin.columnC')}</li>
-                    </ul>
-                    <a
-                      href="/api/template"
-                      className="text-neon-pink text-xs hover:underline mt-2 inline-block"
-                    >
-                      {t('admin.downloadTemplate')}
-                    </a>
                   </div>
                 </div>
               )}
