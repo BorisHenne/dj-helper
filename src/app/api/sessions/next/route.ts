@@ -25,11 +25,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Toujours calculer le prochain jour ouvrable (après aujourd'hui)
+    const nextBusinessDay = getNextBusinessDay(today, true)
+
     if (todaySession && isBusinessDay(today)) {
       return NextResponse.json({
         session: todaySession,
         isToday: true,
-        nextBusinessDay: today.toISOString()
+        nextBusinessDay: nextBusinessDay.toISOString()  // Toujours le PROCHAIN jour ouvrable
       })
     }
 
@@ -46,8 +49,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { date: 'asc' }
     })
-
-    const nextBusinessDay = getNextBusinessDay(today, true)
 
     return NextResponse.json({
       session: nextSession,

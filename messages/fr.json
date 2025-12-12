@@ -160,6 +160,9 @@
     "skipReason": "Raison de l'annulation",
     "skip": "Annuler",
     "validateAndSpin": "Valider et lancer la roue",
-    "spinExplanation": "La roue choisira le DJ du prochain jour ouvrable"
+    "spinExplanation": "La roue choisira le DJ du prochain jour ouvrable",
+    "postpone": "Reporter",
+    "postponeToNextDay": "Reporter au prochain jour",
+    "postponing": "Report en cours..."
   }
 }

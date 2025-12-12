@@ -160,6 +160,9 @@
     "skipReason": "Cancellation reason",
     "skip": "Cancel",
     "validateAndSpin": "Validate and spin the wheel",
-    "spinExplanation": "The wheel will choose the DJ for the next business day"
+    "spinExplanation": "The wheel will choose the DJ for the next business day",
+    "postpone": "Postpone",
+    "postponeToNextDay": "Postpone to next day",
+    "postponing": "Postponing..."
   }
 }

@@ -20,6 +20,7 @@ const ReactConfetti = dynamic(() => import('react-confetti'), { ssr: false })
 // Infos YouTube temporaires pour le flow de completion
 interface PendingCompletion {
   sessionId: string
+  djId: string | null
   youtubeUrl: string
   videoInfo: { title: string; artist: string } | null
 }
@@ -227,9 +228,9 @@ export default function HomePage() {
   }
 
   // Callback quand le DJ du jour demande à lancer la roue
-  const handleRequestSpin = (sessionId: string, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => {
-    // Stocker les infos pour la completion
-    setPendingCompletion({ sessionId, youtubeUrl, videoInfo })
+  const handleRequestSpin = (sessionId: string, djId: string | null, youtubeUrl: string, videoInfo: { title: string; artist: string } | null) => {
+    // Stocker les infos pour la completion (djId sera exclu de la sélection)
+    setPendingCompletion({ sessionId, djId, youtubeUrl, videoInfo })
 
     // Définir la date du prochain jour ouvrable
     if (nextBusinessDay) {
@@ -324,6 +325,7 @@ export default function HomePage() {
                 onSpinComplete={handleSpinComplete}
                 isSpinning={isSpinning}
                 setIsSpinning={setIsSpinning}
+                excludeDjId={pendingCompletion?.djId}
               />
             )}
 
