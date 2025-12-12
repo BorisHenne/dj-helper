@@ -435,22 +435,8 @@ export default function HistoryPage() {
     return videoIdCache[entry.id] || null
   }, [videoIdCache])
 
-  // Effect to fetch video IDs for entries without valid URLs
-  useEffect(() => {
-    // Batch fetch video IDs for entries that need them
-    const entriesToFetch = filteredHistory.filter(entry => {
-      // Skip if already has videoId in database
-      if (entry.videoId) return false
-      const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
-      return !urlVideoId && !videoIdCache[entry.id] && !loadingVideoIds.has(entry.id)
-    })
-
-    // Limit concurrent fetches to avoid rate limiting
-    const fetchLimit = 5
-    entriesToFetch.slice(0, fetchLimit).forEach(entry => {
-      fetchVideoIdFromSearch(entry.id, entry.artist, entry.title)
-    })
-  }, [filteredHistory, videoIdCache, loadingVideoIds, fetchVideoIdFromSearch])
+  // Note: Automatic video ID fetching disabled to avoid rate limiting
+  // Users can manually click on entries to fetch video IDs if needed
 
   // Player functions
   const playVideo = (index: number) => {

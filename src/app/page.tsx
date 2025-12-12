@@ -274,8 +274,8 @@ export default function HomePage() {
     })
   }
 
-  // Déterminer si on doit montrer la section "DJ du jour"
-  const showTodaySection = todaySession?.isBusinessDay && todaySession?.session
+  // Déterminer si on doit montrer la section "DJ du jour" (toujours afficher les jours ouvrables)
+  const showTodaySection = todaySession?.isBusinessDay !== false
 
   return (
     <div className="min-h-screen">
