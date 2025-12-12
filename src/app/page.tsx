@@ -374,13 +374,6 @@ export default function HomePage() {
                     onRefuse={handleRefuseWinner}
                     isLoading={isConfirming}
                   />
-                  <button
-                    onClick={handleReset}
-                    className="mt-2 w-full py-2 text-gray-400 hover:text-white flex items-center justify-center gap-2 transition-colors text-sm"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t('common.restart')}
-                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
