@@ -39,7 +39,7 @@
     "spinning": "En cours...",
     "selectedDj": "DJ Sélectionné",
     "activeDjs": "DJs actifs",
-    "totalBlindtests": "Blindtests total",
+    "totalBlindtests": "Total des blindtests",
     "lastMusic": "Dernière Musique",
     "noMusicYet": "Aucune musique jouée",
     "viewHistory": "Voir l'historique",
@@ -98,7 +98,7 @@
     "deleteConfirm": "Supprimer {name} définitivement ?",
     "weightSeniority": "Poids de l'ancienneté",
     "weightSeniorityDescription": "Plus le poids est élevé, plus les DJs qui n'ont pas joué depuis longtemps seront favorisés",
-    "weightPlayCount": "Poids du nb de passages",
+    "weightPlayCount": "Poids du nombre de passages",
     "weightPlayCountDescription": "Plus le poids est élevé, plus les DJs avec peu de passages seront favorisés"
   },
   "validation": {
