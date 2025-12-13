@@ -59,11 +59,6 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          # Debug: show key info (not the key itself)
-          echo "SSH key file size: $(wc -c < ~/.ssh/id_ed25519) bytes"
-          echo "SSH key first line: $(head -1 ~/.ssh/id_ed25519)"
-          echo "SSH_USER: ${{ secrets.SSH_USER }}"
-
           cat > ~/.ssh/config << EOF
           Host nas
             HostName ssh-nas.boris-henne.fr
@@ -79,28 +74,25 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           REPO: ${{ github.repository }}
         run: |
-          ssh nas << ENDSSH
-          cd ${DEPLOY_PATH}
+          ssh nas << 'ENDSSH'
+          cd ${{ secrets.DEPLOY_PATH }}
 
           # Download latest code from GitHub
-          curl -sL https://github.com/${REPO}/archive/refs/heads/master.tar.gz -o /tmp/repo.tar.gz
+          curl -sL https://github.com/${{ github.repository }}/archive/refs/heads/master.tar.gz -o /tmp/repo.tar.gz
 
-          # Clean and extract
+          # Clean and extract (preserve data volumes)
           rm -rf ./* ./.[!.]*
           tar -xzf /tmp/repo.tar.gz --strip-components=1
           rm /tmp/repo.tar.gz
 
-          # Ensure SSH keys are configured for Risbo user
-          mkdir -p /home/Risbo/.ssh
-          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIABWpuMLOhIvEBiZzpq5unRFjSMsw3Y3nD9OZ77sZD2H boris.henne@gmail.com" > /home/Risbo/.ssh/authorized_keys
-          chmod 700 /home/Risbo/.ssh
-          chmod 600 /home/Risbo/.ssh/authorized_keys
-          chown -R Risbo:users /home/Risbo/.ssh || true
-
-          # Rebuild Docker (no cache to ensure fresh dependencies)
+          # Rebuild Docker
           sudo docker compose down
           sudo docker compose build --no-cache
           sudo docker compose up -d
 
-          echo "Deployment complete! App available at http://192.168.1.29:9000"
+          # Clean up dangling images to save disk space
+          echo "🧹 Cleaning up old Docker images..."
+          sudo docker image prune -f
+
+          echo "✅ Deployment complete!"
           ENDSSH
