@@ -10,7 +10,7 @@ import ConfirmButton from '@/components/ConfirmButton'
 import TodayDJ from '@/components/TodayDJ'
 import LatestMusic from '@/components/LatestMusic'
 import { DJWithProbability, ProbabilityResponse, TodaySessionResponse } from '@/types'
-import { RefreshCw, Trophy, Users, Calendar } from 'lucide-react'
+import { Trophy, Users, Calendar } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 
@@ -439,12 +439,6 @@ export default function HomePage() {
                     </span>
                   )}
                 </h3>
-                <button
-                  onClick={fetchProbabilities}
-                  className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
               </div>
 
               {isLoading ? (

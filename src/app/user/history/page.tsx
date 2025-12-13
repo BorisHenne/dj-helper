@@ -14,7 +14,6 @@ import {
   X,
   Music,
   Youtube,
-  RefreshCw,
   Loader2,
   Sparkles,
   Play,
@@ -532,14 +531,6 @@ export default function HistoryPage() {
                 <span className="hidden sm:inline">{t('history.exportXlsx')}</span>
               </motion.button>
 
-              <motion.button
-                onClick={fetchHistory}
-                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2 tap-target"
-                whileTap={{ scale: 0.95 }}
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('common.refresh')}</span>
-              </motion.button>
             </div>
           </div>
 
