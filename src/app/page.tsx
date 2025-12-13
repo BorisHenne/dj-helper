@@ -330,15 +330,15 @@ export default function HomePage() {
             {isActiveMode ? (
               <>
                 <Unlock className="w-4 h-4" />
-                <span>{registrationStatus.message}</span>
+                <span>{registrationStatus.messageKey ? t(registrationStatus.messageKey, { minutes: registrationStatus.timeLeftMinutes }) : ""}</span>
                 <Clock className="w-4 h-4" />
               </>
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                <span>{registrationStatus.message}</span>
-                {registrationStatus.nextOpenTime && (
-                  <span className="text-xs opacity-75">({registrationStatus.nextOpenTime})</span>
+                <span>{registrationStatus.messageKey ? t(registrationStatus.messageKey, { minutes: registrationStatus.timeLeftMinutes }) : ""}</span>
+                {registrationStatus.nextOpenTimeKey && (
+                  <span className="text-xs opacity-75">({t(registrationStatus.nextOpenTimeKey)})</span>
                 )}
               </>
             )}

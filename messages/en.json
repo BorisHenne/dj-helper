@@ -137,6 +137,18 @@
     "iosStep2": "Select \"Add to Home Screen\"",
     "offline": "You're offline"
   },
+  "registration": {
+    "noWeekend": "No registration on weekends",
+    "mondayAt10": "Monday at 10:00 AM",
+    "tomorrowAt10": "Tomorrow at 10:00 AM",
+    "todayAt10": "Today at 10:00 AM",
+    "alreadyRegistered": "DJ already registered for tomorrow",
+    "sessionPlanned": "Session already planned for tomorrow",
+    "opensAt10": "Registration opens at 10:00 AM",
+    "windowClosed": "Registration window closed (10am-11am)",
+    "activeWithTime": "Registration active - {minutes} min left",
+    "systemError": "System error"
+  },
   "session": {
     "todayDj": "Today's DJ",
     "nextDj": "Next DJ",

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         session: null,
         isBusinessDay: false,
-        message: 'Pas de session le week-end'
+        messageKey: 'session.weekend'
       })
     }
 

@@ -21,8 +21,8 @@ export interface RegistrationStatus {
   currentHour: number
   currentMinutes: number
   isBusinessDay: boolean
-  message: string
-  nextOpenTime: string
+  messageKey: string
+  nextOpenTimeKey: string
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse<RegistrationStatus>> {
@@ -60,23 +60,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<Registrati
     const hasSessionForTomorrow = !!existingSession
     const canRegister = isWorkDay && windowOpen && !isLocked && !hasSessionForTomorrow
 
-    let message = ''
-    let nextOpenTime = 'Demain a 10h00'
+    let messageKey = ''
+    let nextOpenTimeKey = 'registration.tomorrowAt10'
 
     if (!isWorkDay) {
-      message = 'Pas d enregistrement le week-end'
-      nextOpenTime = 'Lundi a 10h00'
+      messageKey = 'registration.noWeekend'
+      nextOpenTimeKey = 'registration.mondayAt10'
     } else if (isLocked) {
-      message = 'DJ deja enregistre pour demain'
+      messageKey = 'registration.alreadyRegistered'
     } else if (hasSessionForTomorrow) {
-      message = 'Session deja planifiee pour demain'
+      messageKey = 'registration.sessionPlanned'
     } else if (hour < 10) {
-      message = 'Enregistrement ouvert a 10h00'
-      nextOpenTime = 'Aujourd hui a 10h00'
+      messageKey = 'registration.opensAt10'
+      nextOpenTimeKey = 'registration.todayAt10'
     } else if (hour >= 11) {
-      message = 'Fenetre fermee (10h-11h)'
+      messageKey = 'registration.windowClosed'
     } else if (windowOpen) {
-      message = 'Enregistrement actif - ' + timeLeft + ' min restantes'
+      messageKey = 'registration.activeWithTime'
     }
 
     return NextResponse.json({
@@ -87,15 +87,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<Registrati
       currentHour: hour,
       currentMinutes: minutes,
       isBusinessDay: isWorkDay,
-      message,
-      nextOpenTime
+      messageKey,
+      nextOpenTimeKey
     })
   } catch (error) {
     console.error('Error checking registration status:', error)
     return NextResponse.json({
       isOpen: false, isLocked: true, canRegister: false, timeLeftMinutes: -1,
       currentHour: 0, currentMinutes: 0, isBusinessDay: false,
-      message: 'Erreur systeme', nextOpenTime: ''
+      messageKey: 'registration.systemError', nextOpenTimeKey: ''
     }, { status: 500 })
   }
 }

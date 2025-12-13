@@ -137,6 +137,18 @@
     "iosStep2": "Sélectionnez \"Sur l'écran d'accueil\"",
     "offline": "Vous êtes hors ligne"
   },
+  "registration": {
+    "noWeekend": "Pas d'enregistrement le week-end",
+    "mondayAt10": "Lundi à 10h00",
+    "tomorrowAt10": "Demain à 10h00",
+    "todayAt10": "Aujourd'hui à 10h00",
+    "alreadyRegistered": "DJ déjà enregistré pour demain",
+    "sessionPlanned": "Session déjà planifiée pour demain",
+    "opensAt10": "Enregistrement ouvert à 10h00",
+    "windowClosed": "Fenêtre fermée (10h-11h)",
+    "activeWithTime": "Enregistrement actif - {minutes} min restantes",
+    "systemError": "Erreur système"
+  },
   "session": {
     "todayDj": "DJ du Jour",
     "nextDj": "Prochain DJ",

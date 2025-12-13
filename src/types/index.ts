@@ -77,7 +77,7 @@ export interface TodaySessionResponse {
   session: DailySession | null
   isBusinessDay: boolean
   date?: string
-  message?: string
+  messageKey?: string
 }
 
 export interface NextSessionResponse {
@@ -95,6 +95,6 @@ export interface RegistrationStatus {
   currentHour: number       // Heure actuelle
   currentMinutes: number    // Minutes actuelles
   isBusinessDay: boolean    // Jour ouvrable
-  message: string           // Message explicatif
-  nextOpenTime: string      // Prochaine ouverture
+  messageKey: string         // Translation key for message
+  nextOpenTimeKey: string   // Translation key for next open time
 }

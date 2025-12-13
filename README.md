@@ -1,187 +1,152 @@
-# 🎧 DJ Helper
+# DJ Rotation
 
-Application web de rotation DJ pour les blindtests quotidiens. Permet de désigner équitablement le DJ du jour via une roue pondérée.
+Web application for DJ rotation in daily blindtest sessions. Fairly selects the DJ of the day using a weighted wheel based on participation history.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css)
-![Drizzle ORM](https://img.shields.io/badge/Drizzle-ORM-C5F74F)
-![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Drizzle](https://img.shields.io/badge/Drizzle-ORM-green)
+![SQLite](https://img.shields.io/badge/SQLite-Database-blue)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-cyan)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
-## Fonctionnalités
+## Features
 
-- **Roue de sélection** - Désignation aléatoire pondérée du DJ
-- **Gestion des DJs** - Ajout, modification, suppression des participants
-- **Historique musical** - Suivi des musiques passées avec liens YouTube
-- **Probabilités intelligentes** - Pondération basée sur :
-  - Ancienneté du dernier passage
-  - Nombre total de passages
-- **Sessions quotidiennes** - Planification et suivi des blindtests
-- **Fenêtre d'enregistrement** - Mode actif/passif (10h-11h)
-- **Export XLSX** - Export de l'historique complet
-- **PWA** - Application installable sur mobile
-- **i18n** - Français et Anglais
+- **Weighted Wheel**: Fair random selection based on number of sessions and time since last participation
+- **Session Management**: Track daily sessions with status (pending, completed, skipped)
+- **Music History**: Complete history with YouTube integration (auto-fetch metadata, embedded player)
+- **Excel Export**: Export history to XLSX format
+- **PWA**: Installable Progressive Web App with offline support
+- **i18n**: French and English interface
+- **Time-based Registration**: Registration window between 10am-11am on business days
 
-## Stack Technique
+## Tech Stack
 
 ### Frontend
-| Technologie | Usage |
-|-------------|-------|
-| **Next.js 14** | Framework React avec App Router |
-| **React 18** | Bibliothèque UI |
-| **TypeScript** | Typage statique |
-| **Tailwind CSS** | Styling utilitaire |
-| **Framer Motion** | Animations fluides |
-| **Lucide React** | Icônes |
-| **next-intl** | Internationalisation |
-| **next-pwa** | Progressive Web App |
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type safety
+- **TailwindCSS** - Utility-first styling
+- **Framer Motion** - Smooth animations
+- **next-intl** - Internationalization (FR/EN)
+- **next-pwa** - PWA support
+- **Lucide React** - Icon library
+- **React Lite YouTube Embed** - Optimized YouTube player
 
 ### Backend
-| Technologie | Usage |
-|-------------|-------|
-| **Next.js API Routes** | API REST |
-| **Drizzle ORM** | ORM TypeScript |
-| **better-sqlite3** | Base de données SQLite |
-| **ytsr** | Recherche YouTube |
+- **Next.js API Routes** - RESTful endpoints
+- **Drizzle ORM** - Type-safe database queries
+- **better-sqlite3** - SQLite database driver
+- **YouTube Data API** - Video metadata fetching
 
 ### Infrastructure
-| Technologie | Usage |
-|-------------|-------|
-| **Docker** | Conteneurisation |
-| **Docker Compose** | Orchestration |
-| **GitHub Actions** | CI/CD |
-| **Cloudflare Tunnel** | Déploiement sécurisé |
-
-## Structure du Projet
-
-```
-dj-helper/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/               # API Routes
-│   │   │   ├── djs/          # CRUD DJs
-│   │   │   ├── history/      # Historique musical
-│   │   │   ├── sessions/     # Sessions quotidiennes
-│   │   │   ├── settings/     # Paramètres
-│   │   │   ├── youtube/      # Intégration YouTube
-│   │   │   └── registration/ # Fenêtre d'enregistrement
-│   │   ├── user/             # Pages de gestion
-│   │   └── page.tsx          # Page principale (roue)
-│   ├── components/            # Composants React
-│   │   ├── SpinningWheel.tsx # Roue de sélection
-│   │   ├── Header.tsx        # Navigation
-│   │   ├── DJCard.tsx        # Carte DJ
-│   │   └── ...
-│   ├── db/                    # Configuration Drizzle
-│   │   ├── schema.ts         # Schéma de la BDD
-│   │   └── index.ts          # Client DB
-│   ├── lib/                   # Utilitaires
-│   │   ├── probability.ts    # Calcul des probabilités
-│   │   ├── dates.ts          # Gestion des dates
-│   │   └── security/         # Rate limiting, validation
-│   └── types/                 # Types TypeScript
-├── database/                  # Scripts et données
-│   ├── data/                 # Base SQLite (volume Docker)
-│   ├── seed.ts               # Seed initial
-│   ├── seed-data/            # Données par défaut
-│   └── migrate-dates.ts      # Migration des dates
-├── messages/                  # Traductions i18n
-│   ├── fr.json               # Français
-│   └── en.json               # Anglais
-├── public/                    # Assets statiques
-│   ├── icons/                # Icônes PWA
-│   └── manifest.json         # Manifest PWA
-├── scripts/                   # Scripts utilitaires
-│   ├── docker-build.sh       # Build Docker optimisé
-│   └── generate-icons.js     # Génération des icônes
-├── docker-compose.yml         # Configuration Docker
-├── Dockerfile                 # Image Docker multi-stage
-├── drizzle.config.ts         # Configuration Drizzle
-└── tailwind.config.ts        # Configuration Tailwind
-```
+- **Docker** - Multi-stage build for production
+- **GitHub Actions** - CI/CD pipeline
+- **Cloudflare Tunnel** - Secure deployment to self-hosted server
 
 ## Installation
 
-### Prérequis
-- Node.js 20+
-- Docker & Docker Compose (pour le déploiement)
+### Prerequisites
+- Node.js 18+
+- pnpm (recommended) or npm
 
-### Développement local
+### Development
 
 ```bash
-# Cloner le repo
+# Clone the repository
 git clone https://github.com/BorisHenne/dj-helper.git
 cd dj-helper
 
-# Installer les dépendances
-npm install --legacy-peer-deps
+# Install dependencies
+pnpm install
 
-# Initialiser la base de données
-npm run db:push
-npm run db:seed
+# Initialize the database
+pnpm db:generate
+pnpm db:push
 
-# Lancer en développement
-npm run dev
+# Start development server
+pnpm dev
 ```
 
-### Déploiement Docker
+The app will be available at `http://localhost:3000`
+
+### Production with Docker
 
 ```bash
-# Build et démarrage
-docker compose up -d --build
+# Build and run
+docker-compose up -d --build
 
-# Ou avec le script optimisé (évite les images orphelines)
-./scripts/docker-build.sh
-docker compose up -d
+# View logs
+docker logs -f dj-rotation
 ```
 
-L'application sera disponible sur `http://localhost:9000`
+## Environment Variables
+
+Create a `.env` file at the project root:
+
+```env
+# YouTube API (optional - for auto-fetching video metadata)
+YOUTUBE_API_KEY=your_api_key
+
+# Timezone
+TZ=Europe/Paris
+```
+
+## Project Structure
+
+```
+├── database/           # Drizzle schema and migrations
+│   └── schema.ts       # Database schema definition
+├── messages/           # Translation files
+│   ├── en.json         # English translations
+│   └── fr.json         # French translations
+├── public/             # Static assets and PWA icons
+├── scripts/            # Utility scripts
+├── src/
+│   ├── app/            # Next.js App Router pages
+│   │   ├── api/        # API routes
+│   │   ├── history/    # Music history page
+│   │   └── user/       # DJ management page
+│   ├── components/     # React components
+│   │   ├── TodayDJ.tsx # Main DJ selection component
+│   │   ├── Wheel.tsx   # Animated wheel component
+│   │   └── ...
+│   ├── db/             # Database connection
+│   ├── lib/            # Utility functions
+│   └── types/          # TypeScript type definitions
+├── docker-compose.yml
+├── Dockerfile
+└── drizzle.config.ts
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/djs` | List all DJs |
+| POST | `/api/djs` | Create a new DJ |
+| PUT | `/api/djs/[id]` | Update a DJ |
+| DELETE | `/api/djs/[id]` | Delete a DJ |
+| GET | `/api/probability` | Get weighted probabilities |
+| GET | `/api/history` | Get music history |
+| POST | `/api/history` | Add music entry |
+| GET | `/api/sessions/today` | Get today's session |
+| POST | `/api/sessions` | Create a session |
+| GET | `/api/registration/status` | Check registration window |
 
 ## Configuration
 
-### Variables d'environnement
-| Variable | Description | Défaut |
-|----------|-------------|--------|
-| `NODE_ENV` | Environnement | `production` |
-| `PORT` | Port d'écoute | `3000` |
+### Probability Weights
 
-### Paramètres de l'application
+The wheel uses two configurable weights to calculate probabilities:
 
-Dans l'interface de gestion (`/user`) :
-- **Poids ancienneté** : Favorise les DJs n'ayant pas joué depuis longtemps
-- **Poids passages** : Favorise les DJs avec peu de passages
+- **Seniority Weight**: Favors DJs who haven't played recently
+- **Play Count Weight**: Favors DJs with fewer total sessions
 
-## API
+Adjust these in the Management page to fine-tune the selection fairness.
 
-### DJs
-- `GET /api/djs` - Liste des DJs
-- `POST /api/djs` - Créer un DJ
-- `PATCH /api/djs/:id` - Modifier un DJ
-- `DELETE /api/djs/:id` - Supprimer un DJ
-- `POST /api/djs/:id/play` - Enregistrer un passage
+### Registration Window
 
-### Historique
-- `GET /api/history` - Liste de l'historique
-- `POST /api/history` - Ajouter une entrée
-- `GET /api/history/latest` - Dernière musique jouée
+Registration is only allowed between 10:00 AM and 11:00 AM on business days (Monday-Friday). This ensures sessions are planned at a consistent time each day.
 
-### Sessions
-- `GET /api/sessions/today` - Session du jour
-- `GET /api/sessions/next` - Prochaine session
-- `POST /api/sessions` - Créer une session
-- `POST /api/sessions/:id/complete` - Terminer une session
-- `POST /api/sessions/:id/skip` - Annuler une session
-
-### YouTube
-- `GET /api/youtube?url=...` - Infos vidéo
-- `GET /api/youtube/search?artist=...&title=...` - Recherche vidéo
-
-## Licence
+## License
 
 MIT
-
----
-
-Développé avec ❤️ par [Boris Henne](https://github.com/BorisHenne)
