@@ -12,7 +12,7 @@ const sqlite = new Database(dbPath)
 const db = drizzle(sqlite)
 
 // Configuration
-const FETCH_VIDEO_IDS = process.env.FETCH_VIDEOS !== 'false' // Set FETCH_VIDEOS=false to skip
+const FETCH_VIDEO_IDS = process.env.FETCH_VIDEOS === 'true' // Only fetch if explicitly enabled
 const DELAY_MS = 2000 // 2 seconds between YouTube searches
 
 function delay(ms: number): Promise<void> {
