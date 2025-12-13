@@ -1,11 +1,15 @@
 # ============================
 # DJ Rotation App - Docker Compose
 # ============================
-# Compatible avec UGOS (Ugreen NAS)
+# Compatible avec UGOS (Ugreen NAS) et Synology
 #
-# Build: docker compose build --pull
-# Run:   docker compose up -d
-# Clean dangling images: docker image prune -f
+# IMPORTANT: Utilisez le script pour éviter les images <none>:
+#   ./docker-build.sh
+#
+# OU manuellement:
+#   docker rmi dj-helper:latest 2>/dev/null; docker compose build --pull && docker image prune -f
+#
+# Run: docker compose up -d
 
 services:
   dj-rotation:
