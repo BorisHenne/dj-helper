@@ -14,7 +14,6 @@ import {
   X,
   Music,
   Youtube,
-  RefreshCw,
   Loader2,
   Sparkles,
   Play,
@@ -252,10 +251,21 @@ export default function HistoryPage() {
     }
 
     try {
+      // Extract videoId from YouTube URL if present
+      const entryData = { ...newEntry }
+      if (newEntry.youtubeUrl) {
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+        const match = newEntry.youtubeUrl.match(regExp)
+        const videoId = match && match[7].length === 11 ? match[7] : null
+        if (videoId) {
+          (entryData as Record<string, unknown>).videoId = videoId
+        }
+      }
+
       const response = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEntry),
+        body: JSON.stringify(entryData),
       })
 
       if (response.ok) {
@@ -279,15 +289,32 @@ export default function HistoryPage() {
 
   const handleUpdateEntry = async (id: string) => {
     try {
+      // Extract videoId from YouTube URL if present
+      const updateData = { ...editEntry }
+      if (editEntry.youtubeUrl) {
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+        const match = editEntry.youtubeUrl.match(regExp)
+        const videoId = match && match[7].length === 11 ? match[7] : null
+        if (videoId) {
+          updateData.videoId = videoId
+        }
+      }
+
       const response = await fetch(`/api/history/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editEntry),
+        body: JSON.stringify(updateData),
       })
 
       if (response.ok) {
         setEditingId(null)
         setEditEntry({})
+        // Clear video cache for this entry to force refresh
+        setVideoIdCache(prev => {
+          const newCache = { ...prev }
+          delete newCache[id]
+          return newCache
+        })
         fetchHistory()
       } else {
         const error = await response.json()
@@ -532,14 +559,6 @@ export default function HistoryPage() {
                 <span className="hidden sm:inline">{t('history.exportXlsx')}</span>
               </motion.button>
 
-              <motion.button
-                onClick={fetchHistory}
-                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center gap-2 tap-target"
-                whileTap={{ scale: 0.95 }}
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('common.refresh')}</span>
-              </motion.button>
             </div>
           </div>
 

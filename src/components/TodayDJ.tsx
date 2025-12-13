@@ -52,6 +52,19 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
       const response = await fetch(`/api/sessions/today${params}`)
       const data: TodaySessionResponse = await response.json()
 
+      // Si c'est le week-end, afficher la prochaine session
+      if (!data.isBusinessDay) {
+        const nextResponse = await fetch(`/api/sessions/next${params}`)
+        const nextData: NextSessionResponse = await nextResponse.json()
+        if (nextData.session) {
+          setSession(nextData.session)
+          setShowingNextSession(true)
+          setIsBusinessDay(false)
+          setIsLoading(false)
+          return
+        }
+      }
+
       // Si pas de session aujourd'hui OU session terminée/annulée, afficher la prochaine session
       if (!data.session || data.session.status === 'skipped' || data.session.status === 'completed') {
         const nextResponse = await fetch(`/api/sessions/next${params}`)
@@ -176,8 +189,8 @@ export default function TodayDJ({ onSessionUpdated, onRequestSpin }: TodayDJProp
     )
   }
 
-  // Si ce n'est pas un jour ouvrable
-  if (!isBusinessDay) {
+  // Si ce n'est pas un jour ouvrable et pas de prochaine session
+  if (!isBusinessDay && !session) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
