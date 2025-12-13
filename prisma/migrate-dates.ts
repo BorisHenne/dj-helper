@@ -31,59 +31,26 @@ function toISOString(value: unknown): string | null {
 async function migrateDates() {
   console.log('🔄 Starting date migration and cleanup...\n')
 
-  // First, completely wipe the DJHistory table to remove corrupted data
-  console.log('🧹 Cleaning up corrupted DJHistory table...')
+  // Completely wipe all tables to start fresh (order matters for foreign keys)
+  console.log('🧹 Cleaning up all tables for fresh start...')
+
+  // Wipe DJHistory
   sqlite.prepare('DELETE FROM DJHistory').run()
-  console.log('  ✓ DJHistory table cleared (will be reseeded)\n')
+  console.log('  ✓ DJHistory table cleared')
 
-  // Wipe DailySession table to remove corrupted sessions
-  console.log('🧹 Cleaning up DailySession table...')
+  // Wipe DailySession
   sqlite.prepare('DELETE FROM DailySession').run()
-  console.log('  ✓ DailySession table cleared (will be reseeded)\n')
+  console.log('  ✓ DailySession table cleared')
 
-  // Migrate DJ table
-  console.log('📀 Migrating DJ dates...')
-  const djRows = sqlite.prepare('SELECT id, lastPlayedAt, createdAt, updatedAt FROM DJ').all() as Array<{
-    id: string
-    lastPlayedAt: number | string | null
-    createdAt: number | string
-    updatedAt: number | string
-  }>
+  // Wipe Play table
+  sqlite.prepare('DELETE FROM Play').run()
+  console.log('  ✓ Play table cleared')
 
-  let djUpdated = 0
-  for (const row of djRows) {
-    const newLastPlayedAt = toISOString(row.lastPlayedAt)
-    const newCreatedAt = toISOString(row.createdAt) || new Date().toISOString()
-    const newUpdatedAt = toISOString(row.updatedAt) || new Date().toISOString()
+  // Wipe DJ table to remove old/corrupted entries
+  sqlite.prepare('DELETE FROM DJ').run()
+  console.log('  ✓ DJ table cleared')
 
-    // Check if any conversion is needed
-    if (typeof row.lastPlayedAt === 'number' || typeof row.createdAt === 'number' || typeof row.updatedAt === 'number') {
-      sqlite.prepare('UPDATE DJ SET lastPlayedAt = ?, createdAt = ?, updatedAt = ? WHERE id = ?')
-        .run(newLastPlayedAt, newCreatedAt, newUpdatedAt, row.id)
-      djUpdated++
-    }
-  }
-  console.log(`  ✓ ${djUpdated}/${djRows.length} DJs updated\n`)
-
-  // Migrate Play table
-  console.log('🎵 Migrating Play dates...')
-  const playRows = sqlite.prepare('SELECT id, playedAt FROM Play').all() as Array<{
-    id: string
-    playedAt: number | string
-  }>
-
-  let playUpdated = 0
-  for (const row of playRows) {
-    if (typeof row.playedAt === 'number') {
-      const newPlayedAt = toISOString(row.playedAt)
-      sqlite.prepare('UPDATE Play SET playedAt = ? WHERE id = ?')
-        .run(newPlayedAt, row.id)
-      playUpdated++
-    }
-  }
-  console.log(`  ✓ ${playUpdated}/${playRows.length} Plays updated\n`)
-
-  console.log('🎉 Date migration complete! History and Sessions will be reseeded.')
+  console.log('\n🎉 All tables cleared! Will be reseeded with fresh data.')
 }
 
 migrateDates()
