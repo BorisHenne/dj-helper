@@ -34,6 +34,9 @@ LABEL org.opencontainers.image.title="DJ Helper"
 LABEL org.opencontainers.image.description="DJ Rotation App"
 LABEL org.opencontainers.image.source="https://github.com/BorisHenne/dj-helper"
 
+# Install sqlite3 for backup operations
+RUN apk add --no-cache sqlite
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -49,8 +52,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/db ./src/db
 
-# Copy seed files and data
+# Copy database files (schema, migrations, seed data)
 COPY --from=builder --chown=nextjs:nodejs /app/database ./database
+
+# Copy scripts
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+RUN chmod +x /app/scripts/*.sh
 
 # Copy node_modules for runtime (better-sqlite3, drizzle-orm, etc.)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
@@ -63,8 +70,11 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Ensure data directory exists with correct permissions
-RUN mkdir -p /app/database/data && chown -R nextjs:nodejs /app/database/data
+# Create data and backup directories with correct permissions
+RUN mkdir -p /app/database/data /app/backups && chown -R nextjs:nodejs /app/database /app/backups
+
+# Allow nextjs user to use cron
+RUN echo "nextjs" >> /etc/cron.allow 2>/dev/null || true
 
 USER nextjs
 
@@ -76,5 +86,5 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# Initialize database with Drizzle, migrate dates to ISO format, seed data, and start
-CMD npx drizzle-kit push && npx tsx database/migrate-dates.ts && npx tsx database/seed.ts && node server.js
+# Use entrypoint script for initialization
+CMD ["/app/scripts/entrypoint.sh"]
