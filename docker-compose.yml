@@ -1,0 +1,25 @@
+services:
+  dj-rotation:
+    image: dj-helper:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dj-rotation
+    restart: unless-stopped
+    ports:
+      - "9000:3000"
+    volumes:
+      - dj-data:/app/database/data
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: wget -q --spider http://127.0.0.1:3000/api/settings || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  dj-data:
+    driver: local
+    name: dj-rotation-data

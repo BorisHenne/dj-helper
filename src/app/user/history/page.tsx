@@ -1,0 +1,957 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import Header from '@/components/Header'
+import YouTubePlayer, { PlayButton } from '@/components/YouTubePlayer'
+import { DJHistory, DJ } from '@/types'
+import { useTranslations, useLocale } from 'next-intl'
+import {
+  Plus,
+  Trash2,
+  Edit3,
+  Save,
+  X,
+  Music,
+  Youtube,
+  Loader2,
+  Sparkles,
+  Play,
+  Search,
+  ChevronDown,
+  Calendar,
+  User,
+  Download,
+} from 'lucide-react'
+import * as XLSX from 'xlsx'
+
+// Mobile Card Component for history entries
+function MobileHistoryCard({
+  entry,
+  index,
+  videoId,
+  isLoading,
+  onPlay,
+  onEdit,
+  onDelete,
+  onFetchVideo,
+  formatDate,
+  t,
+  locale,
+}: {
+  entry: DJHistory
+  index: number
+  videoId: string | null
+  isLoading: boolean
+  onPlay: (index: number) => void
+  onEdit: (entry: DJHistory) => void
+  onDelete: (id: string, title: string) => void
+  onFetchVideo: (id: string, artist: string, title: string) => void
+  formatDate: (date: string) => string
+  t: (key: string) => string
+  locale: string
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="history-mobile-card"
+    >
+      <div className="flex gap-3">
+        {/* Thumbnail */}
+        <div className="flex-shrink-0">
+          {videoId ? (
+            <button
+              onClick={() => onPlay(index)}
+              className="relative group block w-20 h-14 rounded-lg overflow-hidden bg-black"
+            >
+              <img
+                src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
+                alt={entry.title}
+                className="w-full h-full object-cover opacity-80 group-active:opacity-100"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Play className="w-6 h-6 text-white" />
+              </div>
+            </button>
+          ) : isLoading ? (
+            <div className="w-20 h-14 rounded-lg bg-white/5 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-neon-blue animate-spin" />
+            </div>
+          ) : (
+            <button
+              onClick={() => onFetchVideo(entry.id, entry.artist, entry.title)}
+              className="w-20 h-14 rounded-lg bg-white/5 flex items-center justify-center active:bg-white/10"
+            >
+              <Music className="w-5 h-5 text-gray-500" />
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <button
+            onClick={() => onPlay(index)}
+            className="text-left w-full"
+          >
+            <h3 className="font-medium text-white truncate">{entry.title}</h3>
+            <p className="text-sm text-neon-pink truncate">{entry.artist}</p>
+          </button>
+          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {entry.djName}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {formatDate(entry.playedAt)}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => onEdit(entry)}
+            className="p-2 text-gray-400 active:text-white active:bg-white/10 rounded-lg tap-target"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(entry.id, entry.title)}
+            className="p-2 text-gray-400 active:text-red-500 active:bg-red-500/10 rounded-lg tap-target"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+export default function HistoryPage() {
+  const t = useTranslations()
+  const locale = useLocale()
+  const [history, setHistory] = useState<DJHistory[]>([])
+  const [djs, setDjs] = useState<DJ[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [isFetchingYouTube, setIsFetchingYouTube] = useState(false)
+  const [playerOpen, setPlayerOpen] = useState(false)
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Cache for video IDs fetched from search API
+  const [videoIdCache, setVideoIdCache] = useState<Record<string, string>>({})
+  const [loadingVideoIds, setLoadingVideoIds] = useState<Set<string>>(new Set())
+
+  // Filtered history based on search
+  const filteredHistory = history.filter(entry => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      entry.djName.toLowerCase().includes(query) ||
+      entry.artist.toLowerCase().includes(query) ||
+      entry.title.toLowerCase().includes(query)
+    )
+  })
+
+  // Form states
+  const [newEntry, setNewEntry] = useState({
+    djName: '',
+    title: '',
+    artist: '',
+    youtubeUrl: '',
+    playedAt: new Date().toISOString().split('T')[0],
+  })
+  const [editEntry, setEditEntry] = useState<Partial<DJHistory>>({})
+
+  // Fetch YouTube info and auto-fill title/artist
+  const fetchYouTubeInfo = async (url: string) => {
+    if (!url || isFetchingYouTube) return
+
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
+    if (!youtubeRegex.test(url)) return
+
+    setIsFetchingYouTube(true)
+    try {
+      const response = await fetch(`/api/youtube?url=${encodeURIComponent(url)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setNewEntry(prev => ({
+          ...prev,
+          title: data.title || prev.title,
+          artist: data.artist || prev.artist,
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch YouTube info:', error)
+    } finally {
+      setIsFetchingYouTube(false)
+    }
+  }
+
+  const handleYouTubeUrlChange = (url: string) => {
+    setNewEntry(prev => ({ ...prev, youtubeUrl: url }))
+    if (url.includes('youtube.com/watch?v=') || url.includes('youtu.be/')) {
+      fetchYouTubeInfo(url)
+    }
+  }
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await fetch('/api/history')
+      const data = await response.json()
+      setHistory(data)
+    } catch (error) {
+      console.error('Failed to fetch history:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchDjs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/djs')
+      const data = await response.json()
+      setDjs(data.filter((dj: DJ) => dj.isActive))
+    } catch (error) {
+      console.error('Failed to fetch DJs:', error)
+    }
+  }, [])
+
+  // Open YouTube search in new tab
+  const searchYouTube = () => {
+    if (newEntry.artist || newEntry.title) {
+      const query = `${newEntry.artist} ${newEntry.title}`.trim()
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank')
+    }
+  }
+
+  useEffect(() => {
+    fetchHistory()
+    fetchDjs()
+  }, [fetchHistory, fetchDjs])
+
+  const handleAddEntry = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newEntry.djName.trim() || !newEntry.title.trim() || !newEntry.artist.trim() || !newEntry.youtubeUrl.trim()) {
+      return
+    }
+
+    try {
+      // Extract videoId from YouTube URL if present
+      const entryData = { ...newEntry }
+      if (newEntry.youtubeUrl) {
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+        const match = newEntry.youtubeUrl.match(regExp)
+        const videoId = match && match[7].length === 11 ? match[7] : null
+        if (videoId) {
+          (entryData as Record<string, unknown>).videoId = videoId
+        }
+      }
+
+      const response = await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entryData),
+      })
+
+      if (response.ok) {
+        setNewEntry({
+          djName: '',
+          title: '',
+          artist: '',
+          youtubeUrl: '',
+          playedAt: new Date().toISOString().split('T')[0],
+        })
+        setShowAddForm(false)
+        fetchHistory()
+      } else {
+        const error = await response.json()
+        alert(error.error || t('common.error'))
+      }
+    } catch (error) {
+      console.error('Failed to add entry:', error)
+    }
+  }
+
+  const handleUpdateEntry = async (id: string) => {
+    try {
+      // Extract videoId from YouTube URL if present
+      const updateData = { ...editEntry }
+      if (editEntry.youtubeUrl) {
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+        const match = editEntry.youtubeUrl.match(regExp)
+        const videoId = match && match[7].length === 11 ? match[7] : null
+        if (videoId) {
+          updateData.videoId = videoId
+        }
+      }
+
+      const response = await fetch(`/api/history/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+
+      if (response.ok) {
+        setEditingId(null)
+        setEditEntry({})
+        // Clear video cache for this entry to force refresh
+        setVideoIdCache(prev => {
+          const newCache = { ...prev }
+          delete newCache[id]
+          return newCache
+        })
+        fetchHistory()
+      } else {
+        const error = await response.json()
+        alert(error.error || t('common.error'))
+      }
+    } catch (error) {
+      console.error('Failed to update entry:', error)
+    }
+  }
+
+  const handleDeleteEntry = async (id: string, title: string) => {
+    if (!confirm(`${t('common.delete')} "${title}"?`)) return
+
+    try {
+      await fetch(`/api/history/${id}`, { method: 'DELETE' })
+      fetchHistory()
+    } catch (error) {
+      console.error('Failed to delete entry:', error)
+    }
+  }
+
+  const startEdit = (entry: DJHistory) => {
+    setEditingId(entry.id)
+    setEditEntry({
+      djName: entry.djName,
+      title: entry.title,
+      artist: entry.artist,
+      youtubeUrl: entry.youtubeUrl,
+      playedAt: entry.playedAt.split('T')[0],
+    })
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+
+  // Export history to XLSX with DJ counter
+  const exportToXlsx = () => {
+    // Create history data for first sheet
+    const historyData = history.map(entry => ({
+      [t('history.playedAt')]: formatDate(entry.playedAt),
+      'DJ': entry.djName,
+      [t('history.artist')]: entry.artist,
+      [t('history.songTitle')]: entry.title,
+      [t('history.youtubeUrl')]: entry.youtubeUrl,
+    }))
+
+    // Calculate DJ counter for second sheet
+    const djCounter: Record<string, number> = {}
+    history.forEach(entry => {
+      djCounter[entry.djName] = (djCounter[entry.djName] || 0) + 1
+    })
+
+    // Convert to array and sort by count descending
+    const djCounterData = Object.entries(djCounter)
+      .sort((a, b) => b[1] - a[1])
+      .map(([djName, count]) => ({
+        'DJ': djName,
+        [t('history.songsPlayed')]: count,
+      }))
+
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+
+    // Add history sheet
+    const historySheet = XLSX.utils.json_to_sheet(historyData)
+    XLSX.utils.book_append_sheet(wb, historySheet, t('common.history'))
+
+    // Add DJ counter sheet
+    const counterSheet = XLSX.utils.json_to_sheet(djCounterData)
+    XLSX.utils.book_append_sheet(wb, counterSheet, t('history.djCounter'))
+
+    // Generate filename with current date
+    const today = new Date().toISOString().split('T')[0]
+    const filename = `dj-history-${today}.xlsx`
+
+    // Download the file
+    XLSX.writeFile(wb, filename)
+  }
+
+  const getYoutubeVideoId = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+    const match = url.match(regExp)
+    return match && match[7].length === 11 ? match[7] : null
+  }
+
+  // Save video ID to database
+  const saveVideoIdToDatabase = useCallback(async (entryId: string, videoId: string) => {
+    try {
+      await fetch(`/api/history/${entryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      })
+    } catch (error) {
+      console.error('Failed to save video ID to database:', error)
+    }
+  }, [])
+
+  // Fetch video ID from search API based on artist and title
+  const fetchVideoIdFromSearch = useCallback(async (entryId: string, artist: string, title: string) => {
+    // Skip if already loading or cached
+    if (loadingVideoIds.has(entryId) || videoIdCache[entryId]) return
+
+    setLoadingVideoIds(prev => new Set(prev).add(entryId))
+
+    try {
+      const response = await fetch(
+        `/api/youtube/search?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.videoId) {
+          setVideoIdCache(prev => ({ ...prev, [entryId]: data.videoId }))
+          // Save to database for future page loads
+          saveVideoIdToDatabase(entryId, data.videoId)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch video ID:', error)
+    } finally {
+      setLoadingVideoIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(entryId)
+        return newSet
+      })
+    }
+  }, [loadingVideoIds, videoIdCache, saveVideoIdToDatabase])
+
+  // Get video ID for an entry (from database, URL, or cache)
+  const getEntryVideoId = useCallback((entry: DJHistory): string | null => {
+    // First check if videoId is stored in database
+    if (entry.videoId) return entry.videoId
+
+    // Then try to extract from URL
+    const urlVideoId = getYoutubeVideoId(entry.youtubeUrl)
+    if (urlVideoId) return urlVideoId
+
+    // Finally check local cache
+    return videoIdCache[entry.id] || null
+  }, [videoIdCache])
+
+  // Note: Automatic video ID fetching disabled to avoid rate limiting
+  // Users can manually click on entries to fetch video IDs if needed
+
+  // Player functions
+  const playVideo = (index: number) => {
+    setCurrentPlayingIndex(index)
+    setPlayerOpen(true)
+  }
+
+  const playNext = () => {
+    if (currentPlayingIndex < filteredHistory.length - 1) {
+      setCurrentPlayingIndex(currentPlayingIndex + 1)
+    }
+  }
+
+  const playPrevious = () => {
+    if (currentPlayingIndex > 0) {
+      setCurrentPlayingIndex(currentPlayingIndex - 1)
+    }
+  }
+
+  const closePlayer = () => {
+    setPlayerOpen(false)
+    setCurrentPlayingIndex(-1)
+  }
+
+  const currentVideo = currentPlayingIndex >= 0 ? filteredHistory[currentPlayingIndex] : null
+  const currentVideoId = currentVideo ? getEntryVideoId(currentVideo) : null
+
+  return (
+    <div className="min-h-screen pb-safe">
+      <Header />
+
+      {/* YouTube Player Modal */}
+      {currentVideoId && currentVideo && (
+        <YouTubePlayer
+          videoId={currentVideoId}
+          title={currentVideo.title}
+          artist={currentVideo.artist}
+          isOpen={playerOpen}
+          onClose={closePlayer}
+          onNext={playNext}
+          onPrevious={playPrevious}
+          hasNext={currentPlayingIndex < filteredHistory.length - 1}
+          hasPrevious={currentPlayingIndex > 0}
+        />
+      )}
+
+      <main className="container mx-auto px-4 py-6 sm:py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 sm:mb-8"
+        >
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+            <span className="text-glow-sm text-neon-pink">{t('history.title')}</span>
+          </h1>
+          <p className="text-gray-400 text-sm sm:text-base">
+            {t('history.subtitle')}
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="glass rounded-2xl p-4 sm:p-6"
+        >
+          {/* Header avec actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Music className="w-5 h-5 text-neon-blue" />
+              <span className="hidden sm:inline">{t('common.history')}</span>
+              <span className="text-sm font-normal text-gray-400">
+                ({history.length})
+              </span>
+            </h2>
+
+            <div className="flex gap-2">
+              <motion.button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center gap-2 tap-target"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('common.add')}</span>
+              </motion.button>
+
+              <motion.button
+                onClick={exportToXlsx}
+                className="btn-neon px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center gap-2 tap-target"
+                whileTap={{ scale: 0.95 }}
+                title={t('history.exportXlsx')}
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('history.exportXlsx')}</span>
+              </motion.button>
+
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="mb-4 sm:mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`${t('common.search')}...`}
+                className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-neon-blue focus:outline-none transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 active:text-white p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-gray-400 mt-2">
+                {filteredHistory.length} {t('history.entries')} {t('history.found')}
+              </p>
+            )}
+          </div>
+
+          {/* Formulaire d'ajout */}
+          <AnimatePresence>
+            {showAddForm && (
+              <motion.form
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={handleAddEntry}
+                className="mb-4 sm:mb-6 p-4 bg-white/5 rounded-xl"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* DJ Dropdown */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.djName')}</label>
+                    <div className="relative">
+                      <select
+                        value={newEntry.djName}
+                        onChange={(e) => setNewEntry({ ...newEntry, djName: e.target.value })}
+                        className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 focus:border-neon-blue focus:outline-none"
+                        required
+                      >
+                        <option value="" className="bg-gray-900">{t('history.selectDj')}</option>
+                        {djs.map(dj => (
+                          <option key={dj.id} value={dj.name} className="bg-gray-900">
+                            {dj.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* YouTube URL - First so auto-fill can populate other fields */}
+                  <div className="sm:col-span-2">
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.youtubeUrl')}</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={newEntry.youtubeUrl}
+                        onChange={(e) => handleYouTubeUrlChange(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="flex-1"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fetchYouTubeInfo(newEntry.youtubeUrl)}
+                        disabled={isFetchingYouTube || !newEntry.youtubeUrl}
+                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold disabled:opacity-50 flex items-center gap-2 tap-target"
+                        title={t('history.autoFetch')}
+                      >
+                        {isFetchingYouTube ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        <span className="hidden sm:inline">{t('history.autoFetch')}</span>
+                      </button>
+                    </div>
+                    {isFetchingYouTube && (
+                      <p className="text-xs text-purple-400 mt-1 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {t('history.fetchingInfo')}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Artist */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.artist')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.artist}
+                      onChange={(e) => setNewEntry({ ...newEntry, artist: e.target.value })}
+                      placeholder="Ex: Queen"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Song Title */}
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.songTitle')}</label>
+                    <input
+                      type="text"
+                      value={newEntry.title}
+                      onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                      placeholder="Ex: Bohemian Rhapsody"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+
+                  {/* Search YouTube button */}
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={searchYouTube}
+                      disabled={!newEntry.artist && !newEntry.title}
+                      className="w-full px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2 tap-target"
+                      title={t('history.searchOnYoutube')}
+                    >
+                      <Youtube className="w-4 h-4" />
+                      <span>{t('common.search')}</span>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 mb-1 block">{t('history.playedAt')}</label>
+                    <input
+                      type="date"
+                      value={newEntry.playedAt}
+                      onChange={(e) => setNewEntry({ ...newEntry, playedAt: e.target.value })}
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="px-4 py-2 text-gray-400 hover:text-white tap-target"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-500 rounded-lg font-bold tap-target"
+                  >
+                    {t('common.add')}
+                  </button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
+
+          {/* History List - Mobile Cards or Desktop Table */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 skeleton rounded-lg" />
+              ))}
+            </div>
+          ) : filteredHistory.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="mb-2">{searchQuery ? t('history.noResults') : t('history.noEntries')}</p>
+              <p className="text-sm">{searchQuery ? t('history.tryAnotherSearch') : t('history.addMusic')}</p>
+            </div>
+          ) : isMobile ? (
+            // Mobile: Card view
+            <div className="space-y-0">
+              {filteredHistory.map((entry, index) => (
+                <MobileHistoryCard
+                  key={entry.id}
+                  entry={entry}
+                  index={index}
+                  videoId={getEntryVideoId(entry)}
+                  isLoading={loadingVideoIds.has(entry.id)}
+                  onPlay={playVideo}
+                  onEdit={startEdit}
+                  onDelete={handleDeleteEntry}
+                  onFetchVideo={fetchVideoIdFromSearch}
+                  formatDate={formatDate}
+                  t={t}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          ) : (
+            // Desktop: Table view
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 px-2 text-gray-400 font-medium text-sm w-20">
+
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.playedAt')}
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      DJ
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.artist')}
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">
+                      {t('history.songTitle')}
+                    </th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-medium text-sm w-32">
+                      {t('common.actions')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map((entry, index) => (
+                    <tr
+                      key={entry.id}
+                      className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    >
+                      {editingId === entry.id ? (
+                        // Mode édition
+                        <>
+                          <td className="py-2 px-2"></td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="date"
+                              value={editEntry.playedAt?.split('T')[0] || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, playedAt: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editEntry.djName || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, djName: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editEntry.artist || ''}
+                              onChange={(e) => setEditEntry({ ...editEntry, artist: e.target.value })}
+                              className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                value={editEntry.title || ''}
+                                onChange={(e) => setEditEntry({ ...editEntry, title: e.target.value })}
+                                className="w-full text-sm bg-white/10 rounded px-2 py-1"
+                                placeholder={t('history.songTitle')}
+                              />
+                              <div className="flex items-center gap-1">
+                                <Youtube className="w-3 h-3 text-red-500 flex-shrink-0" />
+                                <input
+                                  type="url"
+                                  value={editEntry.youtubeUrl || ''}
+                                  onChange={(e) => setEditEntry({ ...editEntry, youtubeUrl: e.target.value })}
+                                  className="w-full text-xs bg-white/10 rounded px-2 py-1"
+                                  placeholder="https://youtube.com/watch?v=..."
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2 px-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleUpdateEntry(entry.id)}
+                                className="p-1.5 text-green-500 hover:bg-green-500/20 rounded"
+                                title={t('common.save')}
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => { setEditingId(null); setEditEntry({}); }}
+                                className="p-1.5 text-gray-400 hover:bg-white/10 rounded"
+                                title={t('common.cancel')}
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        // Mode affichage
+                        <>
+                          {/* Thumbnail */}
+                          <td className="py-2 px-2">
+                            {(() => {
+                              const videoId = getEntryVideoId(entry)
+                              const isLoadingVideo = loadingVideoIds.has(entry.id)
+
+                              if (videoId) {
+                                return (
+                                  <button
+                                    onClick={() => playVideo(index)}
+                                    className="relative group/thumb block w-16 h-10 rounded overflow-hidden bg-black"
+                                  >
+                                    <img
+                                      src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
+                                      alt={entry.title}
+                                      className="w-full h-full object-cover opacity-80 group-hover/thumb:opacity-100 transition-opacity"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/thumb:bg-black/10 transition-colors">
+                                      <Play className="w-4 h-4 text-white" />
+                                    </div>
+                                  </button>
+                                )
+                              }
+
+                              if (isLoadingVideo) {
+                                return (
+                                  <div className="w-16 h-10 rounded bg-white/5 flex items-center justify-center">
+                                    <Loader2 className="w-4 h-4 text-neon-blue animate-spin" />
+                                  </div>
+                                )
+                              }
+
+                              return (
+                                <button
+                                  onClick={() => fetchVideoIdFromSearch(entry.id, entry.artist, entry.title)}
+                                  className="w-16 h-10 rounded bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors group/retry"
+                                  title={locale === 'fr' ? 'Cliquer pour rechercher la vidéo' : 'Click to search for video'}
+                                >
+                                  <Music className="w-4 h-4 text-gray-500 group-hover/retry:text-neon-pink transition-colors" />
+                                </button>
+                              )
+                            })()}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-300">
+                            {formatDate(entry.playedAt)}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">
+                            {entry.djName}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-neon-pink">
+                            {entry.artist}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            <button
+                              onClick={() => playVideo(index)}
+                              className="hover:text-neon-blue transition-colors flex items-center gap-1 text-left"
+                            >
+                              {entry.title}
+                              <Play className="w-3 h-3 opacity-50" />
+                            </button>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => startEdit(entry)}
+                                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded"
+                                title={t('common.edit')}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEntry(entry.id, entry.title)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      </main>
+    </div>
+  )
+}

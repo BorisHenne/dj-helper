@@ -1,0 +1,49 @@
+{
+  "name": "dj-rotation-app",
+  "version": "1.0.0",
+  "description": "Application de rotation DJ pour les blindtests quotidiens",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx database/seed.ts",
+    "db:migrate-dates": "tsx database/migrate-dates.ts",
+    "generate-icons": "node scripts/generate-icons.js"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "^3.0.4",
+    "drizzle-orm": "^0.45.1",
+    "framer-motion": "^10.16.16",
+    "lucide-react": "^0.294.0",
+    "next": "14.0.4",
+    "next-intl": "^3.4.0",
+    "next-pwa": "^5.6.0",
+    "react": "^18.2.0",
+    "react-confetti": "^6.1.0",
+    "react-dom": "^18.2.0",
+    "xlsx": "^0.18.5",
+    "ytsr": "^3.8.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.16",
+    "better-sqlite3": "^12.5.0",
+    "drizzle-kit": "^0.31.8",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8.4.32",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
