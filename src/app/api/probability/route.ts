@@ -1,41 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, djs, settings, djHistory } from '@/db'
-import { eq, notInArray, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { calculateProbabilities, selectDJByProbability } from '@/lib/probability'
 
 // Force dynamic rendering (database access)
 export const dynamic = 'force-dynamic'
 
+// Helper to get history stats for all DJs
+async function getHistoryStats() {
+  const historyStats = await db
+    .select({
+      djName: djHistory.djName,
+      count: sql<number>`count(*)`.as('count'),
+      lastPlayedAt: sql<string>`max(${djHistory.playedAt})`.as('lastPlayedAt'),
+    })
+    .from(djHistory)
+    .groupBy(djHistory.djName)
+
+  return new Map(
+    historyStats.map(h => [h.djName, { count: h.count, lastPlayedAt: h.lastPlayedAt }])
+  )
+}
+
 // GET - Calcule les probabilités pour tous les DJs actifs
 export async function GET() {
   try {
     const allDjs = await db.select().from(djs).where(eq(djs.isActive, true))
+    const historyStatsMap = await getHistoryStats()
 
-    // Count history entries for each DJ by name
-    const historyCounts = await db
-      .select({
-        djName: djHistory.djName,
-        count: sql<number>`count(*)`.as('count'),
-      })
-      .from(djHistory)
-      .groupBy(djHistory.djName)
-
-    const historyCountMap = new Map(
-      historyCounts.map(h => [h.djName, h.count])
-    )
-
-    // Override totalPlays with history count
-    const djsWithHistoryCount = allDjs.map(dj => ({
-      ...dj,
-      totalPlays: historyCountMap.get(dj.name) || 0,
-    }))
+    // Override totalPlays and lastPlayedAt with history data
+    const djsWithHistoryData = allDjs.map(dj => {
+      const stats = historyStatsMap.get(dj.name)
+      return {
+        ...dj,
+        totalPlays: stats?.count || 0,
+        lastPlayedAt: stats?.lastPlayedAt || dj.lastPlayedAt,
+      }
+    })
 
     const [settingsRow] = await db.select()
       .from(settings)
       .where(eq(settings.id, 'default'))
       .limit(1)
 
-    const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
+    const djsWithProbability = calculateProbabilities(djsWithHistoryData, {
       weightLastPlayed: settingsRow?.weightLastPlayed ?? 0.6,
       weightTotalPlays: settingsRow?.weightTotalPlays ?? 0.4,
     })
@@ -79,32 +87,24 @@ export async function POST(request: NextRequest) {
     }
 
     const allDjs = await query
+    const historyStatsMap = await getHistoryStats()
 
-    // Count history entries for each DJ by name
-    const historyCounts = await db
-      .select({
-        djName: djHistory.djName,
-        count: sql<number>`count(*)`.as('count'),
-      })
-      .from(djHistory)
-      .groupBy(djHistory.djName)
-
-    const historyCountMap = new Map(
-      historyCounts.map(h => [h.djName, h.count])
-    )
-
-    // Override totalPlays with history count
-    const djsWithHistoryCount = allDjs.map(dj => ({
-      ...dj,
-      totalPlays: historyCountMap.get(dj.name) || 0,
-    }))
+    // Override totalPlays and lastPlayedAt with history data
+    const djsWithHistoryData = allDjs.map(dj => {
+      const stats = historyStatsMap.get(dj.name)
+      return {
+        ...dj,
+        totalPlays: stats?.count || 0,
+        lastPlayedAt: stats?.lastPlayedAt || dj.lastPlayedAt,
+      }
+    })
 
     const [settingsRow] = await db.select()
       .from(settings)
       .where(eq(settings.id, 'default'))
       .limit(1)
 
-    const djsWithProbability = calculateProbabilities(djsWithHistoryCount, {
+    const djsWithProbability = calculateProbabilities(djsWithHistoryData, {
       weightLastPlayed: settingsRow?.weightLastPlayed ?? 0.6,
       weightTotalPlays: settingsRow?.weightTotalPlays ?? 0.4,
     })
