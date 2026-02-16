@@ -1,0 +1,98 @@
+# ============================
+# DJ Rotation App - CI/CD Pipeline
+# Deploy via Cloudflare Tunnel to NAS
+# ============================
+
+name: Build & Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  # ============================
+  # Job 1: Build & Test
+  # ============================
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+  # ============================
+  # Job 2: Deploy to NAS
+  # ============================
+  deploy:
+    name: Deploy to NAS
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cloudflared
+        run: |
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
+      - name: Setup SSH via Cloudflare Tunnel
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          cat > ~/.ssh/config << EOF
+          Host nas
+            HostName ssh-nas.boris-henne.fr
+            User ${{ secrets.SSH_USER }}
+            IdentityFile ~/.ssh/id_ed25519
+            ProxyCommand cloudflared access ssh --hostname %h
+            StrictHostKeyChecking no
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy via SSH
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          REPO: ${{ github.repository }}
+        run: |
+          ssh nas << 'ENDSSH'
+          cd ${{ secrets.DEPLOY_PATH }}
+
+          # Download latest code from GitHub
+          curl -sL https://github.com/${{ github.repository }}/archive/refs/heads/master.tar.gz -o /tmp/repo.tar.gz
+
+          # Clean and extract (preserve data volumes)
+          rm -rf ./* ./.[!.]*
+          tar -xzf /tmp/repo.tar.gz --strip-components=1
+          rm /tmp/repo.tar.gz
+
+          # Rebuild Docker
+          sudo docker compose down
+          sudo docker compose build --no-cache
+          sudo docker compose up -d
+
+          # Clean up dangling images to save disk space
+          echo "🧹 Cleaning up old Docker images..."
+          sudo docker image prune -f
+
+          echo "✅ Deployment complete!"
+          ENDSSH

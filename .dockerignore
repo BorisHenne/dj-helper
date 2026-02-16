@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Next.js
+.next
+out
+
+# Build
+build
+dist
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Development
+*.md
+.env*
+.eslintrc*
+
+# Database (will be created at runtime)
+prisma/data/*.db
+prisma/data/*.db-journal
+
+# CI/CD
+.github
